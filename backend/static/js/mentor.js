@@ -3,10 +3,61 @@ window.Mentor = (function () {
   let history = [];
   let mode = "fun";   // fun | quick | quiz
 
+  /* The floating button is draggable — tap to open, drag to reposition.
+     Stays inside the app frame and remembers where the kid put it. */
   function mount() {
     const root = document.getElementById("mentor-root");
-    root.innerHTML = `<button class="fab" id="fab" title="Ask your mentor">🤖</button>`;
-    document.getElementById("fab").onclick = open;
+    root.innerHTML = `<button class="fab" id="fab" title="Ask your mentor" aria-label="Ask your mentor">🤖</button>`;
+    const fab = document.getElementById("fab");
+    restorePos(fab);
+
+    let startX = 0, startY = 0, offX = 0, offY = 0, dragging = false, moved = false;
+    fab.addEventListener("pointerdown", (e) => {
+      dragging = true; moved = false;
+      const r = fab.getBoundingClientRect();
+      startX = e.clientX; startY = e.clientY; offX = e.clientX - r.left; offY = e.clientY - r.top;
+      try { fab.setPointerCapture(e.pointerId); } catch (_) {}
+      fab.classList.add("dragging");
+    });
+    fab.addEventListener("pointermove", (e) => {
+      if (!dragging) return;
+      if (!moved && Math.hypot(e.clientX - startX, e.clientY - startY) > 6) moved = true;
+      if (moved) { placeAt(fab, e.clientX - offX, e.clientY - offY); e.preventDefault(); }
+    });
+    const end = (e) => {
+      if (!dragging) return;
+      dragging = false; fab.classList.remove("dragging");
+      try { fab.releasePointerCapture(e.pointerId); } catch (_) {}
+      if (moved) savePos(fab); else open();   // tap (no drag) opens the chat
+    };
+    fab.addEventListener("pointerup", end);
+    fab.addEventListener("pointercancel", end);
+    window.addEventListener("resize", () => { const r = fab.getBoundingClientRect(); if (r.left || r.top) placeAt(fab, r.left, r.top); });
+  }
+
+  function appBox() {
+    const a = document.querySelector(".app");
+    return a ? a.getBoundingClientRect()
+             : { left: 0, top: 0, right: innerWidth, bottom: innerHeight, width: innerWidth, height: innerHeight };
+  }
+  function placeAt(fab, x, y) {
+    const b = appBox(), s = fab.offsetWidth || 60, pad = 10;
+    x = Math.max(b.left + pad, Math.min(x, b.right - s - pad));
+    y = Math.max(b.top + pad, Math.min(y, b.bottom - s - pad));
+    fab.style.left = x + "px"; fab.style.top = y + "px"; fab.style.right = "auto"; fab.style.bottom = "auto";
+  }
+  function savePos(fab) {
+    const b = appBox(), r = fab.getBoundingClientRect(), s = fab.offsetWidth || 60, pad = 10;
+    const fx = (r.left - b.left - pad) / Math.max(1, b.width - s - 2 * pad);
+    const fy = (r.top - b.top - pad) / Math.max(1, b.height - s - 2 * pad);
+    const cl = (v) => Math.max(0, Math.min(1, v));
+    try { localStorage.setItem("wolio_fab", JSON.stringify({ fx: cl(fx), fy: cl(fy) })); } catch (_) {}
+  }
+  function restorePos(fab) {
+    let saved; try { saved = JSON.parse(localStorage.getItem("wolio_fab") || "null"); } catch (_) {}
+    if (!saved) return;   // keep the CSS default (bottom-right) on first run
+    const b = appBox(), s = 60, pad = 10;
+    placeAt(fab, b.left + pad + saved.fx * (b.width - s - 2 * pad), b.top + pad + saved.fy * (b.height - s - 2 * pad));
   }
 
   function open(seed) {

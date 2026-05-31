@@ -461,9 +461,12 @@ input::placeholder { color: var(--ink-soft); opacity: .6; }
   transform: translateY(-8px) scale(1.12); box-shadow: 0 12px 26px rgba(124,92,255,.55); }
 
 /* floating mentor */
-.fab { position: absolute; right: 18px; bottom: 104px; width: 60px; height: 60px; border-radius: 50%;
+.fab { position: fixed; right: 18px; bottom: 104px; width: 60px; height: 60px; border-radius: 50%;
   background: var(--grad-hero); box-shadow: 0 12px 30px rgba(124,92,255,.55); display: grid; place-items: center;
-  font-size: 30px; z-index: 30; animation: bob 3s ease-in-out infinite; }
+  font-size: 30px; z-index: 30; animation: bob 3s ease-in-out infinite; cursor: grab; touch-action: none; user-select: none; }
+.fab.dragging { animation: none; transition: none; cursor: grabbing; transform: scale(1.1);
+  box-shadow: 0 18px 44px rgba(124,92,255,.75); }
+.fab.dragging::after { display: none; }
 .fab::after { content: ""; position: absolute; inset: -4px; border-radius: 50%; border: 2px solid rgba(255,255,255,.4); animation: ping 2.4s ease-out infinite; }
 @keyframes ping { 0% { transform: scale(1); opacity: .7; } 100% { transform: scale(1.5); opacity: 0; } }
 
