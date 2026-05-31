@@ -65,7 +65,11 @@ def complete_mission(data: CompleteMissionIn):
                  f"Learned during “{mission['title']}”."),
             )
         xp = user["xp"] + 50
-        conn.execute("UPDATE users SET xp=? WHERE id=?", (xp, data.user_id))
+        # Remember where the kid was so the homepage can resume exactly here.
+        conn.execute(
+            "UPDATE users SET xp=?, last_world=?, last_mission=? WHERE id=?",
+            (xp, data.world_id, data.mission_id, data.user_id),
+        )
         conn.execute(
             "INSERT INTO events (user_id, kind, payload) VALUES (?,?,?)",
             (data.user_id, "mission", f'{{"world":"{data.world_id}","mission":"{data.mission_id}"}}'),

@@ -56,13 +56,42 @@ CREATE TABLE IF NOT EXISTS events (
     payload       TEXT,                      -- JSON
     created_at    TEXT DEFAULT (datetime('now'))
 );
+
+CREATE TABLE IF NOT EXISTS daily_quests (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id       INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    day           TEXT NOT NULL,             -- YYYY-MM-DD (local-ish, server date)
+    task_id       TEXT NOT NULL,             -- learn | play | revise
+    icon          TEXT,
+    label         TEXT,
+    target        INTEGER DEFAULT 1,
+    reward        INTEGER DEFAULT 20,
+    claimed       INTEGER DEFAULT 0,         -- XP already granted?
+    UNIQUE(user_id, day, task_id)
+);
 """
+
+# Columns added after the first release. SQLite's CREATE TABLE IF NOT EXISTS
+# won't touch an existing table, so we add them defensively at startup.
+_USER_MIGRATIONS = {
+    "last_world":    "TEXT",
+    "last_mission":  "TEXT",
+    "last_progress": "INTEGER DEFAULT 0",
+}
+
+
+def _migrate(conn: sqlite3.Connection) -> None:
+    cols = {r["name"] for r in conn.execute("PRAGMA table_info(users)").fetchall()}
+    for name, decl in _USER_MIGRATIONS.items():
+        if name not in cols:
+            conn.execute(f"ALTER TABLE users ADD COLUMN {name} {decl}")
 
 
 def init_db() -> None:
     conn = get_conn()
     try:
         conn.executescript(SCHEMA)
+        _migrate(conn)
         conn.commit()
     finally:
         conn.close()

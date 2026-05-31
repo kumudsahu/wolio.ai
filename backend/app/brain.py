@@ -20,9 +20,9 @@ WORLDS = [
         "color": "#6C5CE7",
         "interests": ["space", "games"],
         "missions": [
-            {"id": "gravity", "title": "Why do things fall?", "concept": "Gravity", "emoji": "🪐"},
-            {"id": "mars-rover", "title": "Fix the Mars Rover", "concept": "Forces & Motion", "emoji": "🛞"},
-            {"id": "saturn", "title": "Can Saturn really float?", "concept": "Density", "emoji": "🪐"},
+            {"id": "gravity", "title": "Why do things fall?", "concept": "Gravity", "emoji": "🪐", "chapter": "Forces"},
+            {"id": "mars-rover", "title": "Fix the Mars Rover", "concept": "Forces & Motion", "emoji": "🛞", "chapter": "Forces"},
+            {"id": "saturn", "title": "Can Saturn really float?", "concept": "Density", "emoji": "🪐", "chapter": "Matter"},
         ],
     },
     {
@@ -34,9 +34,9 @@ WORLDS = [
         "color": "#00B894",
         "interests": ["games", "cars", "sports"],
         "missions": [
-            {"id": "fractions", "title": "The Pizza Heist", "concept": "Fractions", "emoji": "🍕"},
-            {"id": "patterns", "title": "Crack the Secret Code", "concept": "Patterns", "emoji": "🔢"},
-            {"id": "speed", "title": "Race Day Math", "concept": "Speed & Distance", "emoji": "🏎️"},
+            {"id": "fractions", "title": "The Pizza Heist", "concept": "Fractions", "emoji": "🍕", "chapter": "Numbers"},
+            {"id": "patterns", "title": "Crack the Secret Code", "concept": "Patterns", "emoji": "🔢", "chapter": "Logic"},
+            {"id": "speed", "title": "Race Day Math", "concept": "Speed & Distance", "emoji": "🏎️", "chapter": "Numbers"},
         ],
     },
     {
@@ -48,8 +48,8 @@ WORLDS = [
         "color": "#E17055",
         "interests": ["stories", "art", "animals"],
         "missions": [
-            {"id": "nani-1", "title": "Nani Scientist – Episode 1", "concept": "Vocabulary", "emoji": "👵"},
-            {"id": "brave", "title": "The Brave Little Fox", "concept": "Emotions", "emoji": "🦊"},
+            {"id": "nani-1", "title": "Nani Scientist – Episode 1", "concept": "Vocabulary", "emoji": "👵", "chapter": "Words"},
+            {"id": "brave", "title": "The Brave Little Fox", "concept": "Emotions", "emoji": "🦊", "chapter": "Feelings"},
         ],
     },
     {
@@ -61,8 +61,8 @@ WORLDS = [
         "color": "#0984E3",
         "interests": ["stories", "games"],
         "missions": [
-            {"id": "dino", "title": "Walk with Dinosaurs", "concept": "Prehistoric Era", "emoji": "🦕"},
-            {"id": "pyramid", "title": "Build a Pyramid", "concept": "Ancient Egypt", "emoji": "🔺"},
+            {"id": "dino", "title": "Walk with Dinosaurs", "concept": "Prehistoric Era", "emoji": "🦕", "chapter": "Prehistory"},
+            {"id": "pyramid", "title": "Build a Pyramid", "concept": "Ancient Egypt", "emoji": "🔺", "chapter": "Ancient Worlds"},
         ],
     },
 ]
@@ -97,6 +97,145 @@ def build_journey(name: str, interests: Optional[list], learning_style: Optional
         "pitch": f"We'll {verb} your way through {top['subject']} — starting with “{first['title']}”.",
         "world_order": [w["id"] for w in ranked],
     }
+
+
+# ---------------------------------------------------------------------------
+# Homepage engine — greeting, recommendation, quests, micro-learning.
+# ---------------------------------------------------------------------------
+def time_of_day(hour: int) -> str:
+    if hour < 12:
+        return "morning"
+    if hour < 17:
+        return "afternoon"
+    return "evening"
+
+
+def greeting(name: str, hour: int) -> dict:
+    slot = time_of_day(hour)
+    text = {"morning": "Good morning", "afternoon": "Hey", "evening": "Good evening"}[slot]
+    emoji = {"morning": "🌅", "afternoon": "👋", "evening": "🌙"}[slot]
+    return {"text": f"{text}, {name}", "emoji": emoji, "slot": slot}
+
+
+# Micro-learning bites — each tagged so we can surface what the kid loves first.
+QUICK_LEARN = [
+    {"id": "ql-saturn", "q": "Saturn could float on water! 🪐", "go": "Why?", "subject": "Science", "tags": ["space"]},
+    {"id": "ql-heart",  "q": "Your heart pumps ~1L of blood a minute ❤️", "go": "Whoa, learn", "subject": "Biology", "tags": ["animals"]},
+    {"id": "ql-zero",   "q": "Zero was invented in India 🔢", "go": "Story time", "subject": "Math", "tags": ["games", "stories"]},
+    {"id": "ql-octo",   "q": "Octopuses have 3 hearts 🐙", "go": "Tap to learn", "subject": "Science", "tags": ["animals"]},
+    {"id": "ql-speed",  "q": "A cheetah out-accelerates a sports car 🏎️", "go": "How?", "subject": "Physics", "tags": ["cars", "sports", "animals"]},
+    {"id": "ql-sky",    "q": "Why is the sky blue? 🌤️", "go": "60-sec answer", "subject": "Science", "tags": ["space", "art"]},
+    {"id": "ql-music",  "q": "Every song is built from just 12 notes 🎵", "go": "Tap to learn", "subject": "Music", "tags": ["music", "art"]},
+    {"id": "ql-goal",   "q": "A free kick can curve from spin ⚽", "go": "The science", "subject": "Physics", "tags": ["sports", "games"]},
+]
+
+
+def quick_learn_for(interests, n: int = 6) -> list:
+    """Surface micro-bites that match the kid's interests first, then fill."""
+    interests = set(i.lower() for i in (interests or []))
+    liked = [c for c in QUICK_LEARN if interests & set(c["tags"])]
+    rest = [c for c in QUICK_LEARN if c not in liked]
+    ordered = liked + rest
+    return [{k: v for k, v in c.items() if k != "tags"} for c in ordered[:n]]
+
+
+# Daily quests — reset every 24h, lightly scaled by difficulty tier.
+def daily_quest_set(tier: int = 1) -> list:
+    learn_target = 1 if tier == 1 else 2
+    revise_target = 2 if tier == 1 else 3
+    return [
+        {"task_id": "learn",  "icon": "🚀", "label": f"Complete {learn_target} mission" + ("s" if learn_target > 1 else ""),
+         "target": learn_target, "reward": 40},
+        {"task_id": "quick",  "icon": "⚡", "label": "Try 1 Quick Learn", "target": 1, "reward": 20},
+        {"task_id": "revise", "icon": "🧠", "label": f"Revise {revise_target} concepts", "target": revise_target, "reward": 30},
+    ]
+
+
+def recommend_action(name: str, ranked_worlds: list, last_world: str, last_mission: str,
+                     completed_titles: set, needs_revision: list, hour: int,
+                     concepts_count: int) -> dict:
+    """The Hero section brain: decide the single best next action.
+
+    Signals: last_activity, weak_topics, interest_priority, time_of_day.
+    """
+    slot = time_of_day(hour)
+
+    # 1) Evening + something fading from memory → nudge a revision.
+    if needs_revision and (slot == "evening" or concepts_count >= 4):
+        c = needs_revision[0]
+        return {
+            "kind": "revise",
+            "icon": "🧠",
+            "title": f"Quick revision: {c['title']}",
+            "subtitle": f"You learned this a while ago — let's lock it back in (2 min).",
+            "cta": "Revise now",
+            "reason": "evening_memory_fade",
+            "world_id": None, "mission_id": None,
+            "color": "#34e0a1",
+        }
+
+    # 2) An in-progress world with an unfinished next mission → continue.
+    target_world = next((w for w in ranked_worlds if w["id"] == last_world), None) or (ranked_worlds[0] if ranked_worlds else None)
+    if target_world:
+        nxt = next((m for m in target_world["missions"] if m["concept"] not in completed_titles), None)
+        if nxt:
+            warm = "Warm up your brain 🌅 " if slot == "morning" else ""
+            return {
+                "kind": "continue_mission",
+                "icon": target_world["emoji"],
+                "title": f"{nxt['emoji']} {nxt['title']}",
+                "subtitle": f"{warm}Continue your {target_world['name']} journey.",
+                "cta": "Continue",
+                "reason": "interest_priority" if last_world is None else "last_activity",
+                "world_id": target_world["id"], "mission_id": nxt["id"],
+                "color": target_world["color"],
+            }
+
+    # 3) Everything in the top world is done → open a fresh world.
+    fresh = next((w for w in ranked_worlds if any(m["concept"] not in completed_titles for m in w["missions"])), None)
+    if fresh:
+        m = fresh["missions"][0]
+        return {
+            "kind": "new_world",
+            "icon": fresh["emoji"],
+            "title": f"Explore {fresh['name']}",
+            "subtitle": f"A whole new world is ready for you, {name}!",
+            "cta": "Start",
+            "reason": "breadth",
+            "world_id": fresh["id"], "mission_id": m["id"],
+            "color": fresh["color"],
+        }
+
+    # 4) Mastered everything we have → celebrate + quick-learn.
+    return {
+        "kind": "quick_learn",
+        "icon": "🏆",
+        "title": "You're a Wolio legend!",
+        "subtitle": "You've cleared every mission. Try a Quick Learn while we craft more.",
+        "cta": "Quick Learn",
+        "reason": "all_done",
+        "world_id": None, "mission_id": None,
+        "color": "#ffce4f",
+    }
+
+
+def notifications(streak: int, needs_revision: list, concepts_count: int, slot: str) -> list:
+    """Smart, non-spammy alerts for the bell."""
+    out = []
+    if needs_revision:
+        c = needs_revision[0]
+        out.append({"id": "n-revise", "type": "revision", "icon": "🧠",
+                    "text": f"Time to revise {c['title']} — it's fading from memory."})
+    if streak >= 1 and slot == "evening":
+        out.append({"id": "n-streak", "type": "streak", "icon": "🔥",
+                    "text": f"Your {streak}-day streak is at risk! Learn something to keep it alive."})
+    if concepts_count == 0:
+        out.append({"id": "n-first", "type": "mission", "icon": "🚀",
+                    "text": "Your first mission is ready — tap Continue to begin!"})
+    elif concepts_count >= 3:
+        out.append({"id": "n-unlock", "type": "mission", "icon": "✨",
+                    "text": "New missions unlocked across your worlds. Go explore!"})
+    return out
 
 
 # ---------------------------------------------------------------------------

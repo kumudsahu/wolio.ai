@@ -103,6 +103,11 @@ def revise(data: ReviseIn):
                 "UPDATE concepts SET memory_strength=100, last_revised=datetime('now') WHERE id=?",
                 [(i,) for i in ids],
             )
+            # Log for the daily-quest counter ("Revise N concepts").
+            conn.execute(
+                "INSERT INTO events (user_id, kind, payload) VALUES (?,?,?)",
+                (data.user_id, "revision", f'{{"count":{len(ids)}}}'),
+            )
             conn.commit()
     finally:
         conn.close()

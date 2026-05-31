@@ -51,6 +51,34 @@ def complete_onboarding(data: OnboardingIn):
     return {"user_id": user_id, "journey": journey}
 
 
+class PrefsIn(BaseModel):
+    language: Optional[str] = None
+    tone: Optional[str] = None
+    voice: Optional[bool] = None
+    avatar: Optional[Dict[str, Any]] = None
+
+
+@router.patch("/me/{user_id}")
+def update_prefs(user_id: int, data: PrefsIn):
+    fields, params = [], []
+    if data.language is not None: fields.append("language=?"); params.append(data.language)
+    if data.tone is not None:     fields.append("tone=?");     params.append(data.tone)
+    if data.voice is not None:    fields.append("voice=?");    params.append(int(data.voice))
+    if data.avatar is not None:   fields.append("avatar=?");   params.append(jdump(data.avatar))
+    if not fields:
+        return {"updated": False}
+    params.append(user_id)
+    conn = get_conn()
+    try:
+        cur = conn.execute(f"UPDATE users SET {', '.join(fields)} WHERE id=?", params)
+        conn.commit()
+        if cur.rowcount == 0:
+            raise HTTPException(404, "User not found")
+    finally:
+        conn.close()
+    return {"updated": True}
+
+
 @router.get("/me/{user_id}")
 def get_me(user_id: int):
     conn = get_conn()
