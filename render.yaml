@@ -1,0 +1,17 @@
+# One-click deploy to Render (https://render.com) — free tier.
+# In Render: New + → Blueprint → connect this repo → it reads this file.
+services:
+  - type: web
+    name: wolio-ai
+    runtime: python
+    rootDir: backend
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+      # Set DEMO_AUTH_CODE to "" to disable the dev master login code in prod.
+      - key: DEMO_AUTH_CODE
+        value: "123456"
