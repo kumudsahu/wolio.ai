@@ -66,7 +66,7 @@ body {
   color: var(--ink);
   overflow: hidden;
 }
-h1, h2, h3, .display { font-family: "Fredoka", "Nunito", sans-serif; font-weight: 600; }
+h1, h2, h3, .display { font-family: var(--font-display, "Fredoka", "Nunito", sans-serif); font-weight: 600; }
 button { font-family: inherit; cursor: pointer; border: none; }
 
 /* ---------- cosmic background ---------- */
@@ -128,7 +128,88 @@ body[data-theme="comic"] .stars {
 .progress-dots i { width: 8px; height: 8px; border-radius: 999px; background: rgba(255,255,255,.18); transition: .3s; }
 .progress-dots i.active { width: 26px; background: var(--grad-cta); }
 
-.title { font-size: 27px; line-height: 1.15; margin: 0 0 8px; letter-spacing: -.5px; }
+.title { font-size: 27px; line-height: 1.15; margin: 0 0 8px; letter-spacing: -.5px; font-family: var(--font-display, "Fredoka", "Nunito", sans-serif); }
+
+/* ============================================================
+   THEME SKINS — each theme changes shape language, not just color
+   (surfaces = the rectangular cards / buttons / inputs)
+   ============================================================ */
+:root, body[data-theme="cosmic"] { --font-display: "Fredoka", "Nunito", sans-serif; }
+body[data-theme="comic"]  { --font-display: "Bangers", "Fredoka", cursive; }
+body[data-theme="neon"]   { --font-display: "Orbitron", "Fredoka", sans-serif; }
+body[data-theme="candy"]  { --font-display: "Baloo 2", "Fredoka", cursive; }
+
+/* COMIC — bold cartoon/anime panels: thick ink outlines + hard offset shadows */
+body[data-theme="comic"] .btn, body[data-theme="comic"] .choice, body[data-theme="comic"] .world,
+body[data-theme="comic"] .quest, body[data-theme="comic"] .tile, body[data-theme="comic"] .reel,
+body[data-theme="comic"] .memcard, body[data-theme="comic"] .memsuggest, body[data-theme="comic"] .resume,
+body[data-theme="comic"] .hero, body[data-theme="comic"] .continue-card, body[data-theme="comic"] .brainmeter,
+body[data-theme="comic"] .levelcard, body[data-theme="comic"] .shop-item, body[data-theme="comic"] .ach,
+body[data-theme="comic"] .badge, body[data-theme="comic"] .premium-banner, body[data-theme="comic"] .mode-btn,
+body[data-theme="comic"] .exp-item, body[data-theme="comic"] .dna, body[data-theme="comic"] .plan,
+body[data-theme="comic"] .cmcard, body[data-theme="comic"] .field, body[data-theme="comic"] .searchbar input,
+body[data-theme="comic"] .ql-card, body[data-theme="comic"] .story-box, body[data-theme="comic"] .memcard-full {
+  border-width: 2.5px !important; border-color: rgba(255,255,255,.9) !important; border-style: solid !important;
+  box-shadow: 5px 5px 0 rgba(0,0,0,.55) !important; border-radius: 16px !important; backdrop-filter: none !important;
+}
+body[data-theme="comic"] .app { border: 3px solid rgba(255,255,255,.85); }
+body[data-theme="comic"] .tabbar button .ti { border: 2.5px solid rgba(255,255,255,.9) !important; box-shadow: 3px 3px 0 rgba(0,0,0,.5) !important; }
+body[data-theme="comic"] h1, body[data-theme="comic"] h2, body[data-theme="comic"] h3,
+body[data-theme="comic"] .title { letter-spacing: 1px; font-weight: 400; }
+body[data-theme="comic"] .tile b, body[data-theme="comic"] .bm-ring span { font-family: "Bangers", cursive; letter-spacing: 1px; }
+
+/* NEON — cyber HUD: sharp corners + glowing thin borders */
+body[data-theme="neon"] .btn, body[data-theme="neon"] .choice, body[data-theme="neon"] .world,
+body[data-theme="neon"] .quest, body[data-theme="neon"] .tile, body[data-theme="neon"] .reel,
+body[data-theme="neon"] .memcard, body[data-theme="neon"] .memsuggest, body[data-theme="neon"] .resume,
+body[data-theme="neon"] .hero, body[data-theme="neon"] .continue-card, body[data-theme="neon"] .brainmeter,
+body[data-theme="neon"] .levelcard, body[data-theme="neon"] .shop-item, body[data-theme="neon"] .ach,
+body[data-theme="neon"] .badge, body[data-theme="neon"] .premium-banner, body[data-theme="neon"] .mode-btn,
+body[data-theme="neon"] .exp-item, body[data-theme="neon"] .dna, body[data-theme="neon"] .plan,
+body[data-theme="neon"] .cmcard, body[data-theme="neon"] .field, body[data-theme="neon"] .searchbar input,
+body[data-theme="neon"] .ql-card, body[data-theme="neon"] .story-box, body[data-theme="neon"] .memcard-full {
+  border-radius: 7px !important; border-color: rgba(177,75,255,.55) !important;
+  box-shadow: 0 0 14px rgba(177,75,255,.3), inset 0 0 10px rgba(46,230,255,.06) !important;
+}
+body[data-theme="neon"] .app { border: 1px solid rgba(177,75,255,.5); box-shadow: 0 0 50px rgba(177,75,255,.35), var(--shadow); }
+body[data-theme="neon"] .tabbar button .ti { border-radius: 12px !important; }
+body[data-theme="neon"] h1, body[data-theme="neon"] h2, body[data-theme="neon"] h3 { letter-spacing: .5px; }
+
+/* CANDY — bubbly: extra-round + soft pillowy pink shadows */
+body[data-theme="candy"] .btn, body[data-theme="candy"] .choice, body[data-theme="candy"] .world,
+body[data-theme="candy"] .quest, body[data-theme="candy"] .tile, body[data-theme="candy"] .reel,
+body[data-theme="candy"] .memcard, body[data-theme="candy"] .memsuggest, body[data-theme="candy"] .resume,
+body[data-theme="candy"] .hero, body[data-theme="candy"] .continue-card, body[data-theme="candy"] .brainmeter,
+body[data-theme="candy"] .levelcard, body[data-theme="candy"] .shop-item, body[data-theme="candy"] .ach,
+body[data-theme="candy"] .premium-banner, body[data-theme="candy"] .exp-item, body[data-theme="candy"] .dna,
+body[data-theme="candy"] .field, body[data-theme="candy"] .searchbar input, body[data-theme="candy"] .ql-card,
+body[data-theme="candy"] .memcard-full {
+  border-radius: 26px !important; box-shadow: 0 14px 30px rgba(255,107,214,.22) !important;
+}
+
+/* OCEAN — fluid: smooth rounding + soft blue depth */
+body[data-theme="ocean"] .btn, body[data-theme="ocean"] .choice, body[data-theme="ocean"] .world,
+body[data-theme="ocean"] .quest, body[data-theme="ocean"] .tile, body[data-theme="ocean"] .reel,
+body[data-theme="ocean"] .memcard, body[data-theme="ocean"] .memsuggest, body[data-theme="ocean"] .resume,
+body[data-theme="ocean"] .hero, body[data-theme="ocean"] .continue-card, body[data-theme="ocean"] .brainmeter,
+body[data-theme="ocean"] .levelcard, body[data-theme="ocean"] .shop-item, body[data-theme="ocean"] .ach,
+body[data-theme="ocean"] .premium-banner, body[data-theme="ocean"] .exp-item, body[data-theme="ocean"] .dna,
+body[data-theme="ocean"] .field, body[data-theme="ocean"] .searchbar input, body[data-theme="ocean"] .ql-card,
+body[data-theme="ocean"] .memcard-full {
+  border-radius: 22px !important; box-shadow: 0 14px 32px rgba(28,167,236,.22) !important;
+}
+
+/* JUNGLE — organic: asymmetric leaf-like corners */
+body[data-theme="jungle"] .btn, body[data-theme="jungle"] .choice, body[data-theme="jungle"] .world,
+body[data-theme="jungle"] .quest, body[data-theme="jungle"] .tile, body[data-theme="jungle"] .reel,
+body[data-theme="jungle"] .memcard, body[data-theme="jungle"] .memsuggest, body[data-theme="jungle"] .resume,
+body[data-theme="jungle"] .hero, body[data-theme="jungle"] .continue-card, body[data-theme="jungle"] .brainmeter,
+body[data-theme="jungle"] .levelcard, body[data-theme="jungle"] .shop-item, body[data-theme="jungle"] .ach,
+body[data-theme="jungle"] .premium-banner, body[data-theme="jungle"] .exp-item, body[data-theme="jungle"] .dna,
+body[data-theme="jungle"] .field, body[data-theme="jungle"] .searchbar input, body[data-theme="jungle"] .ql-card,
+body[data-theme="jungle"] .memcard-full {
+  border-radius: 20px 7px 20px 7px !important; box-shadow: 0 12px 26px rgba(43,214,115,.2) !important;
+}
 .subtitle { font-size: 15px; color: var(--ink-soft); margin: 0 0 22px; }
 
 /* buttons */
