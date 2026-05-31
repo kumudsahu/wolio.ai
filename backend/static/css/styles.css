@@ -340,6 +340,47 @@ button { font-family: inherit; cursor: pointer; border: none; }
   border-radius: 14px; font-weight: 800; font-size: 14px; opacity: 0; z-index: 50; transition: .3s; box-shadow: var(--shadow); }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+/* ============== MEMORY SYSTEM (Step 4) ============== */
+.brainmeter { display: flex; align-items: center; gap: 16px; background: var(--card); border: 1px solid var(--card-edge); border-radius: 20px; padding: 16px; }
+.bm-ring { --pct: 0; width: 78px; height: 78px; border-radius: 50%; flex: 0 0 auto; display: grid; place-items: center;
+  background: conic-gradient(var(--green) calc(var(--pct) * 1%), rgba(255,255,255,.1) 0); position: relative; }
+.bm-ring::before { content: ""; position: absolute; inset: 8px; border-radius: 50%; background: var(--bg-soft); }
+.bm-ring span { position: relative; font-family: "Fredoka"; font-weight: 700; font-size: 18px; }
+.bm-info { flex: 1; } .bm-info b { font-size: 14px; }
+.ret { font-weight: 900; font-size: 13px; padding: 2px 8px; border-radius: 999px; }
+.ret.ok { color: var(--green); background: rgba(52,224,161,.16); }
+.ret.mid { color: var(--gold); background: rgba(255,206,79,.16); }
+.ret.low { color: var(--pink); background: rgba(255,107,166,.16); }
+
+/* revision modes */
+.rev-modes { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.rev-mode { background: var(--card); border: 1px solid var(--card-edge); border-radius: 16px; padding: 12px 6px; color: var(--ink); display: grid; gap: 2px; justify-items: center; transition: transform .12s; }
+.rev-mode:active { transform: scale(.95); }
+.rev-mode span { font-size: 24px; } .rev-mode b { font-size: 12px; } .rev-mode small { font-size: 9px; color: var(--ink-soft); }
+.rev-mode.chal { background: linear-gradient(135deg, rgba(255,206,79,.18), rgba(255,107,166,.14)); border-color: rgba(255,206,79,.3); }
+
+/* badges */
+.badge { flex: 0 0 110px; scroll-snap-align: start; background: var(--card); border: 1px solid var(--card-edge); border-radius: 16px; padding: 14px 10px; text-align: center; opacity: .45; filter: grayscale(.7); }
+.badge.earned { opacity: 1; filter: none; border-color: rgba(255,206,79,.35); background: linear-gradient(160deg, rgba(255,206,79,.14), rgba(124,92,255,.1)); }
+.badge .bemoji { font-size: 34px; } .badge b { display: block; font-size: 12px; margin-top: 4px; } .badge small { font-size: 10px; color: var(--ink-soft); }
+
+/* timeline month */
+.month-h { font-size: 12px; font-weight: 800; color: var(--ink-soft); text-transform: uppercase; letter-spacing: .08em; margin: 8px 0 8px 4px; }
+.cmcard { cursor: pointer; }
+.cmcard .cm.low { color: var(--pink); }
+
+/* memory card */
+.memcard-full { text-align: center; border-radius: 22px; padding: 22px 18px; background: linear-gradient(160deg, rgba(124,92,255,.2), rgba(46,230,214,.12)); border: 1px solid var(--card-edge); }
+.memcard-full .mc-emoji { font-size: 64px; }
+.memcard-full .mc-bar { height: 10px; border-radius: 999px; background: rgba(0,0,0,.28); overflow: hidden; margin: 14px 0 6px; }
+.memcard-full .mc-bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--green), var(--cyan)); border-radius: 999px; }
+
+/* growth graph */
+.growth { display: flex; align-items: flex-end; gap: 8px; height: 120px; padding: 10px 4px 0; background: var(--card); border: 1px solid var(--card-edge); border-radius: 16px; }
+.gbar { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; gap: 6px; }
+.gbar i { width: 70%; min-height: 6px; border-radius: 8px 8px 0 0; background: var(--grad-cta); transition: height .5s ease; }
+.gbar span { font-size: 10px; color: var(--ink-soft); font-weight: 800; }
+
 /* ============== MISSION PLAYER (Step 3) ============== */
 .mhead { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
 .mhead .icon-btn { width: 36px; height: 36px; border-radius: 11px; background: var(--card); border: 1px solid var(--card-edge); color: var(--ink); font-size: 15px; }

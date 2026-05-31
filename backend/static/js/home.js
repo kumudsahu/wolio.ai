@@ -311,23 +311,51 @@ window.Home = (function () {
   function renderMemory() {
     tab = "memory";
     const empty = tl.total_concepts === 0;
+    const ret = tl.retention_label || "Strong";
+    const retClass = ret === "Strong" ? "ok" : ret === "Medium" ? "mid" : "low";
     UI.render(`
-      <div class="home-head fadein"><div class="who"><h2>🧬 Your Memory</h2><p>Everything you've ever learned</p></div>
-        <div class="xpchip" style="background:rgba(52,224,161,.16);color:var(--green);border-color:rgba(52,224,161,.3)">🧠 ${tl.memory_strength}%</div></div>
+      <div class="home-head fadein"><div class="who"><h2>🧬 Your Memory</h2><p>Google for your own brain 🔍</p></div></div>
 
-      <div class="searchbar fadein delay-1">
-        <input id="brainq" placeholder="🔍 Search your brain… (planets, fractions)" />
+      <!-- 4.7 brain meter -->
+      <div class="brainmeter fadein delay-1">
+        <div class="bm-ring" style="--pct:${tl.memory_strength}"><span>${tl.memory_strength}%</span></div>
+        <div class="bm-info">
+          <b>Memory strength: <span class="ret ${retClass}">${ret}</span></b>
+          <div class="row" style="gap:8px;margin-top:8px;flex-wrap:wrap">
+            <span class="pill">📚 ${tl.total_concepts} learned</span>
+            <span class="pill">🏆 ${tl.mastered} mastered</span>
+            <span class="pill">🔁 ${tl.revisions} revised</span>
+          </div>
+        </div>
       </div>
 
-      <div class="tiles fadein delay-1" style="margin-bottom:6px">
-        <div class="tile"><b>${tl.total_concepts}</b><span>learned</span></div>
-        <div class="tile"><b>${tl.mastered}</b><span>mastered</span></div>
-        <div class="tile"><b>${tl.memory_strength}%</b><span>strength</span></div>
+      <!-- 4.4 search your brain -->
+      <div class="searchbar fadein delay-1" style="margin-top:14px">
+        <input id="brainq" placeholder="🔍 Search anything you learned…" />
       </div>
 
-      <button class="btn btn--block fadein delay-2" id="revise" style="margin:10px 0">⚡ Revise everything I've learned</button>
+      <!-- 4.5 instant revision modes -->
+      <div class="section-h fadein delay-2"><h3>⚡ Revise</h3></div>
+      <div class="rev-modes fadein delay-2">
+        <button class="rev-mode" data-s="quick"><span>⚡</span><b>Quick</b><small>60-sec recent</small></button>
+        <button class="rev-mode" data-s="smart"><span>🧠</span><b>Smart</b><small>weak spots</small></button>
+        <button class="rev-mode" data-s="full"><span>🌍</span><b>Full</b><small>everything</small></button>
+        <button class="rev-mode chal" data-s="challenge"><span>🔥</span><b>Challenge</b><small>hard mode</small></button>
+      </div>
 
-      <div id="tlbody" class="fadein delay-2">
+      <!-- 4.8 badges -->
+      <div class="section-h fadein delay-2" style="margin-top:18px"><h3>🏅 Badges</h3></div>
+      <div class="rail fadein delay-2">
+        ${tl.badges.map((b) => `
+          <div class="badge ${b.earned ? "earned" : ""}">
+            <div class="bemoji">${b.icon}</div><b>${UI.esc(b.label)}</b>
+            <small>${b.earned ? "Unlocked" : UI.esc(b.hint)}</small>
+          </div>`).join("")}
+      </div>
+
+      <!-- 4.2 timeline -->
+      <div class="section-h fadein delay-3" style="margin-top:18px"><h3>📅 Timeline</h3></div>
+      <div id="tlbody" class="fadein delay-3">
         ${empty ? emptyState() : tl.years.map(yearBlock).join("")}
       </div>
       ${tabbar("memory")}
@@ -336,27 +364,35 @@ window.Home = (function () {
     q.addEventListener("input", debounce(async () => {
       const term = q.value.trim();
       const body = document.getElementById("tlbody");
-      if (!term) { body.innerHTML = tl.years.map(yearBlock).join("") || emptyState(); return; }
+      if (!term) { body.innerHTML = tl.years.map(yearBlock).join("") || emptyState(); wireConceptCards(); return; }
       const r = await API.searchBrain(App.userId(), term);
       body.innerHTML = r.results.length
-        ? `<div class="muted" style="margin:6px 0 10px">${r.results.length} memories for "${UI.esc(term)}"</div>` + r.results.map(conceptCard).join("")
+        ? `<div class="muted" style="margin:6px 0 10px">${r.results.length} memories for "${UI.esc(term)}"</div>` + r.results.map(conceptRow).join("")
         : `<div class="empty"><span class="em">🔍</span>No memory of "${UI.esc(term)}" yet.<br>Go learn it!</div>`;
+      wireConceptCards();
     }, 220));
-    document.getElementById("revise").onclick = openReviseSheet;
+    document.querySelectorAll(".rev-mode").forEach((b) => b.onclick = () => reviseScope(b.dataset.s));
+    wireConceptCards();
     wireTabs();
+  }
+
+  function wireConceptCards() {
+    document.querySelectorAll("[data-cid]").forEach((el) => el.onclick = () => openMemoryCard(+el.dataset.cid));
   }
 
   function yearBlock(y) {
     return `<div class="year">
       <div class="yh"><b>${y.year}</b><span>${y.count} concept${y.count > 1 ? "s" : ""}</span></div>
-      ${y.concepts.map(conceptCard).join("")}
+      ${y.months.map((m) => `
+        <div class="month-h">${UI.esc(m.label)}</div>
+        ${m.concepts.map(conceptRow).join("")}`).join("")}
     </div>`;
   }
-  function conceptCard(c) {
-    return `<div class="cmcard">
+  function conceptRow(c) {
+    return `<div class="cmcard" data-cid="${c.id}">
       <div class="ce">${c.emoji || "✨"}</div>
       <div class="ci"><b>${UI.esc(c.title)}</b><span>${UI.esc(c.learned_via || c.subject)} · ${ago(c.learned_at)}</span></div>
-      <div class="cm">${c.memory_strength}%</div>
+      <div class="cm ${c.memory_strength < 60 ? "low" : ""}">${c.memory_strength}%</div>
     </div>`;
   }
   function emptyState() {
@@ -364,32 +400,60 @@ window.Home = (function () {
       Complete a mission and watch it appear here forever.</div>`;
   }
 
-  /* ================= REVISION ================= */
-  function openReviseSheet() {
-    const scopes = [
-      { id: "last_7", label: "Last 7 days", emoji: "📅" },
-      { id: "last_year", label: "Last 1 year", emoji: "🗓️" },
-      { id: "all", label: "Entire journey", emoji: "🌍" },
-      { id: "needs_revision", label: "What I'm forgetting", emoji: "🧠" },
-    ];
-    const sheet = UI.h(`
-      <div class="sheet"><div class="scrim"></div>
-        <div class="panel">
-          <div class="phead"><b>⚡ Revise</b><small>&nbsp;pick a scope</small><button class="close">✕</button></div>
-          <div class="stack" style="padding:16px">
-            ${scopes.map((s) => `<button class="quest" data-s="${s.id}" style="text-align:left"><div class="qi">${s.emoji}</div><div class="qt"><b>${s.label}</b></div><div class="qx">▶</div></button>`).join("")}
-          </div>
-        </div></div>`);
-    document.querySelector(".stage").appendChild(sheet);
-    const close = () => sheet.remove();
-    sheet.querySelector(".scrim").onclick = close;
-    sheet.querySelector(".close").onclick = close;
-    sheet.querySelectorAll("[data-s]").forEach((b) => b.onclick = () => { close(); reviseScope(b.dataset.s); });
+  /* ================= 4.3 MEMORY CARD ================= */
+  async function openMemoryCard(cid) {
+    let d;
+    try { d = await API.conceptCard(App.userId(), cid); }
+    catch (e) { UI.toast("Couldn't open memory"); return; }
+    const c = d.card;
+    const retClass = c.retention === "Strong" ? "ok" : c.retention === "Medium" ? "mid" : "low";
+    const methods = (c.method || []).filter((m) => m !== "play");
+    UI.render(`
+      <div class="home-head fadein"><button class="pill" onclick="Home._tab('memory')">←</button>
+        <div class="who"><h2>Memory Card</h2><p>${UI.esc(c.subject || "")}</p></div></div>
+      <div class="memcard-full fadein delay-1">
+        <div class="mc-emoji">${c.emoji}</div>
+        <h1 class="title center" style="margin:6px 0 2px">${UI.esc(c.title)}</h1>
+        <p class="muted center" style="margin:0">${UI.esc(d.smart_recall)}</p>
+        <div class="mc-bar"><i style="width:${c.memory_strength}%"></i></div>
+        <div class="row center" style="justify-content:center;gap:8px;margin-top:4px">
+          <span class="ret ${retClass}">${c.retention}</span>
+          <span class="muted" style="font-size:13px">${c.mastery}% mastery · revised ${c.revision_count}×</span>
+        </div>
+        ${methods.length ? `<div class="row" style="justify-content:center;gap:6px;flex-wrap:wrap;margin-top:10px">
+          ${methods.map((m) => `<span class="pill">${methodEmoji(m)} ${UI.esc(m)}</span>`).join("")}</div>` : ""}
+      </div>
+      <div class="bubble fadein delay-2" style="margin-top:14px">${UI.esc(d.action.text)}</div>
+      <div class="cta-bar stack fadein delay-2">
+        <button class="btn btn--block" id="mcRevise">▶ Revise this</button>
+        <div class="row">
+          <button class="btn btn--ghost" style="flex:1" id="mcReplay">🔁 Replay</button>
+          <button class="btn btn--ghost" style="flex:1" id="mcAsk">🧠 Ask AI</button>
+        </div>
+      </div>
+      ${tabbar("memory")}
+    `);
+    document.getElementById("mcRevise").onclick = async () => {
+      const r = await API.reviseConcept(App.userId(), cid);
+      await refresh();
+      runFlashcards([r.card], 0);
+    };
+    document.getElementById("mcReplay").onclick = () => {
+      const w = worlds.find((x) => x.missions.some((m) => m.concept === c.title));
+      const m = w && w.missions.find((x) => x.concept === c.title);
+      if (w && m) Mission.replay(w.id, m.id);
+      else UI.toast("This one came from Quick Learn — no mission to replay 🙂");
+    };
+    document.getElementById("mcAsk").onclick = () =>
+      Mentor.open(`Explain "${c.title}" to me in a brand new fun way, different from before.`);
+    wireTabs();
   }
+  function methodEmoji(m) { return { story: "📖", game: "🎮", quiz: "🧠", quick_learn: "⚡", match: "🔗", slider: "🎚️", order: "🔢", choose: "🌿" }[m] || "✨"; }
 
+  /* ================= REVISION ================= */
   async function reviseScope(scope) {
     const r = await API.revise(App.userId(), scope);
-    if (!r.count) { UI.toast("Nothing to revise here yet!"); return; }
+    if (!r.count) { UI.toast(scope === "smart" ? "Nothing needs revising — great memory! 🔥" : "Nothing to revise here yet!"); return; }
     runFlashcards(r.cards, 0);
   }
 
@@ -601,32 +665,54 @@ window.Home = (function () {
     wireTabs();
   }
 
-  function parentDashboard() {
-    const interests = (me.interests || []).join(", ") || "exploring";
+  async function parentDashboard() {
+    UI.render(`<div class="builder"><div class="ring"></div><p class="build-step">Building growth report…</p></div>`);
+    let s;
+    try { s = await API.insights(App.userId()); }
+    catch (e) { UI.toast("Couldn't load report"); return renderProfile(); }
+
+    const maxg = Math.max(1, ...s.growth.map((g) => g.count));
     UI.render(`
       <div class="home-head fadein"><button class="pill" onclick="Home.parentGate()">←</button>
-        <div class="who"><h2>${UI.esc(me.name)}'s Growth Story</h2><p>AI Learning DNA</p></div></div>
+        <div class="who"><h2>${UI.esc(s.name)}'s Growth Story</h2><p>AI Learning DNA · premium</p></div></div>
+
       <div class="memcard fadein delay-1" style="margin-top:8px">
-        <div class="mtitle">🧠 ${me.name} has learned <b>${hp.stats.concepts}</b> concepts</div>
-        <div class="mstrength"><i style="width:${hp.memory.strength}%"></i></div>
-        <div class="muted" style="font-size:13px">Memory strength ${hp.memory.strength}% · ${hp.stats.mastered} mastered</div>
+        <div class="mtitle">🧠 ${UI.esc(s.name)} has learned <b>${s.total_concepts}</b> concept${s.total_concepts !== 1 ? "s" : ""}</div>
+        <div class="mstrength"><i style="width:${s.memory_strength}%"></i></div>
+        <div class="muted" style="font-size:13px">Memory ${s.memory_strength}% (${s.retention_label}) · ${s.mastered} mastered · ${s.total_xp} XP</div>
       </div>
-      <div class="tiles fadein delay-2" style="margin-top:14px">
-        <div class="tile"><b>${hp.stats.xp}</b><span>total XP</span></div>
-        <div class="tile"><b>${hp.stats.streak}</b><span>day streak</span></div>
-        <div class="tile"><b>${hp.stats.mastered}</b><span>mastered</span></div>
+
+      <!-- growth graph -->
+      <div class="section fadein delay-2"><div class="section-h"><h3>📈 Growth over time</h3></div>
+        ${s.growth.length ? `<div class="growth">
+          ${s.growth.map((g) => `<div class="gbar"><i style="height:${Math.round(g.count / maxg * 100)}%"></i><span>${UI.esc(g.label)}</span></div>`).join("")}
+        </div>` : `<div class="muted">No data yet — keep learning!</div>`}
       </div>
-      <div class="section fadein delay-2"><div class="section-h"><h3>Interest map</h3></div>
-        <div class="quest"><div class="qi">❤️</div><div class="qt"><b>Loves</b><span>${UI.esc(interests)}</span></div></div>
+
+      <!-- subject strengths -->
+      <div class="section fadein delay-2"><div class="section-h"><h3>📚 Subject strengths</h3></div>
+        <div class="stack">${(s.subjects.length ? s.subjects : [{subject:"—",avg_mastery:0,level:"—",count:0}]).map((sub) => `
+          <div class="quest"><div class="qi">${subjEmoji(sub.subject)}</div>
+            <div class="qt"><b>${UI.esc(sub.subject)} · ${sub.count}</b>
+              <div class="qbar"><i style="width:${sub.avg_mastery}%"></i></div></div>
+            <div class="qx" style="color:${sub.avg_mastery>=60?'var(--green)':sub.avg_mastery>=35?'var(--gold)':'var(--pink)'}">${UI.esc(sub.level)}</div></div>`).join("")}
+        </div>
       </div>
-      <div class="section fadein delay-3"><div class="section-h"><h3>AI insight</h3></div>
-        <div class="bubble">${UI.esc(me.name)} is building strong curiosity in ${UI.esc((me.interests || [])[0] || "science")}. Keep the daily streak alive for compounding growth 🔥</div>
+
+      <div class="row fadein delay-3" style="gap:10px">
+        <div class="tile" style="flex:1"><b style="color:var(--green)">${s.strong.length}</b><span>strong areas</span></div>
+        <div class="tile" style="flex:1"><b style="color:var(--pink)">${s.weak.length}</b><span>to revisit</span></div>
       </div>
-      <button class="btn btn--block fadein delay-3" style="margin-top:16px" onclick="UI.toast('Premium: AI Learning DNA report 📄')">📄 Generate AI Learning DNA report</button>
+
+      <div class="section fadein delay-3"><div class="section-h"><h3>🧬 AI insight</h3></div>
+        <div class="bubble">${UI.esc(s.intelligence)}</div>
+      </div>
+      <button class="btn btn--block fadein delay-3" style="margin-top:14px" onclick="UI.toast('Premium: full AI Learning DNA report 📄')">📄 Generate full DNA report</button>
       ${tabbar("profile")}
     `);
     wireTabs();
   }
+  function subjEmoji(s) { return { Science: "🔬", Math: "🧮", Literature: "📖", History: "⏳", Biology: "🌱", Physics: "🚀", Music: "🎵" }[s] || "📚"; }
 
   /* ================= NAV ================= */
   function tabbar(active) {

@@ -35,6 +35,9 @@ window.API = {
     API._post("/api/missions/complete", { user_id, world_id, mission_id }),
   timeline: (id) => API._get(`/api/timeline/${id}`),
   searchBrain: (id, q) => API._get(`/api/timeline/${id}/search?q=${encodeURIComponent(q)}`),
+  conceptCard: (uid, cid) => API._get(`/api/concept/${uid}/${cid}`),
+  reviseConcept: (user_id, concept_id) => API._post("/api/concept/revise", { user_id, concept_id }),
+  insights: (id) => API._get(`/api/insights/${id}`),
   revise: (user_id, scope) => API._post("/api/timeline/revise", { user_id, scope }),
   mentor: (payload) => API._post("/api/mentor", payload),
 };

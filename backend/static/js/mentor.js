@@ -8,7 +8,7 @@ window.Mentor = (function () {
     document.getElementById("fab").onclick = open;
   }
 
-  function open() {
+  function open(seed) {
     const me = Home.getMe && Home.getMe();
     const name = me ? me.name : "buddy";
     const sheet = UI.h(`
@@ -71,6 +71,7 @@ window.Mentor = (function () {
     input.addEventListener("keydown", (e) => { if (e.key === "Enter") send(); });
     sheet.querySelectorAll(".chip").forEach((c) => c.onclick = () => send(c.dataset.q));
     setTimeout(() => input.focus(), 200);
+    if (seed) setTimeout(() => send(seed), 300);   // re-explain a memory card
   }
 
   function bubble(chat, cls, text) {

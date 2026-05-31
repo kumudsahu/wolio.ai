@@ -69,6 +69,15 @@ CREATE TABLE IF NOT EXISTS daily_quests (
     claimed       INTEGER DEFAULT 0,         -- XP already granted?
     UNIQUE(user_id, day, task_id)
 );
+
+CREATE TABLE IF NOT EXISTS revision_logs (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id       INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    concept_id    INTEGER,
+    mode          TEXT,                      -- quick | smart | full | challenge
+    count         INTEGER DEFAULT 1,         -- concepts touched in the session
+    created_at    TEXT DEFAULT (datetime('now'))
+);
 """
 
 # Columns added after the first release. SQLite's CREATE TABLE IF NOT EXISTS
@@ -79,12 +88,19 @@ _USER_MIGRATIONS = {
     "last_progress": "INTEGER DEFAULT 0",
 }
 
+_CONCEPT_MIGRATIONS = {
+    "revision_count": "INTEGER DEFAULT 0",
+    "method":         "TEXT",      # JSON list: ["story","game","quiz"]
+    "keywords":       "TEXT",      # space-separated search terms
+}
+
 
 def _migrate(conn: sqlite3.Connection) -> None:
-    cols = {r["name"] for r in conn.execute("PRAGMA table_info(users)").fetchall()}
-    for name, decl in _USER_MIGRATIONS.items():
-        if name not in cols:
-            conn.execute(f"ALTER TABLE users ADD COLUMN {name} {decl}")
+    for table, migrations in (("users", _USER_MIGRATIONS), ("concepts", _CONCEPT_MIGRATIONS)):
+        cols = {r["name"] for r in conn.execute(f"PRAGMA table_info({table})").fetchall()}
+        for name, decl in migrations.items():
+            if name not in cols:
+                conn.execute(f"ALTER TABLE {table} ADD COLUMN {name} {decl}")
 
 
 def init_db() -> None:

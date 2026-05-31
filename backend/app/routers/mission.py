@@ -3,13 +3,14 @@
 GET  /api/mission/{world_id}/{mission_id}  → full playbook + current mastery/level
 POST /api/mission/finish                   → score the run, update mastery, save concept
 """
+import json
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional
 
 from ..db import get_conn
 from ..brain import WORLDS
-from ..content import get_playbook, level_label, level_index
+from ..content import get_playbook, level_label, level_index, make_keywords
 
 router = APIRouter(prefix="/api", tags=["mission"])
 
@@ -79,6 +80,10 @@ def finish_mission(data: FinishIn):
             (data.user_id, mission["concept"]),
         ).fetchone()
 
+        playbook = get_playbook(data.world_id, mission)
+        method = json.dumps(["story", "game", playbook.get("game", {}).get("type", "play"), "quiz"])
+        keywords = make_keywords(mission["concept"], mission["title"], world["subject"], world["name"])
+
         if existing:
             old = existing["mastery"]
             gain = int(8 + acc * 22)                 # replay nudges mastery up
@@ -94,11 +99,11 @@ def finish_mission(data: FinishIn):
             leveled_up = True
             conn.execute(
                 """INSERT INTO concepts
-                   (user_id, title, subject, world, learned_via, difficulty, mastery, emoji, summary)
-                   VALUES (?,?,?,?,?,?,?,?,?)""",
+                   (user_id, title, subject, world, learned_via, difficulty, mastery, emoji, summary, method, keywords)
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
                 (data.user_id, mission["concept"], world["subject"], world["name"],
                  f"{world['name']} Mission", "beginner", new_mastery, mission["emoji"],
-                 f"Learned during “{mission['title']}” — story, game & quiz."),
+                 f"Learned during “{mission['title']}” — story, game & quiz.", method, keywords),
             )
 
         # XP: base + accuracy bonus (+ first-clear bonus). Challenge mode pays more.

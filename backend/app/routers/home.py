@@ -196,12 +196,14 @@ def quick_learn_seen(data: QuickLearnIn):
                 "SELECT 1 FROM concepts WHERE user_id=? AND title=?", (data.user_id, data.title)
             ).fetchone()
             if not exists:
+                from ..content import make_keywords
                 conn.execute(
                     """INSERT INTO concepts
-                       (user_id, title, subject, world, learned_via, difficulty, mastery, emoji, summary)
-                       VALUES (?,?,?,?,?,?,?,?,?)""",
+                       (user_id, title, subject, world, learned_via, difficulty, mastery, emoji, summary, method, keywords)
+                       VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
                     (data.user_id, data.title, data.subject, "Quick Learn", "Quick Learn",
-                     "beginner", 20, data.emoji, "Picked up from a Quick Learn bite."),
+                     "beginner", 20, data.emoji, "Picked up from a Quick Learn bite.",
+                     '["quick_learn"]', make_keywords(data.title, data.subject)),
                 )
                 saved = True
         conn.commit()

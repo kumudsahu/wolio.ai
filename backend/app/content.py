@@ -29,6 +29,17 @@ def level_index(mastery: int) -> int:
     return idx
 
 
+def make_keywords(*parts: str) -> str:
+    """Build a lowercase, de-duplicated keyword string for 'Search your brain'."""
+    seen, words = set(), []
+    for p in parts:
+        for w in str(p or "").replace("&", " ").replace("-", " ").split():
+            w = "".join(c for c in w.lower() if c.isalnum())
+            if len(w) > 2 and w not in seen:
+                seen.add(w); words.append(w)
+    return " ".join(words)
+
+
 # --- authored playbooks, keyed by "world/mission" -------------------------
 PLAYBOOKS = {
     "space/gravity": {
