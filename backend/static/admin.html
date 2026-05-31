@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>wolio.ai — Admin Console</title>
+  <style>
+    :root { --bg:#0b0720; --card:#15103a; --edge:rgba(255,255,255,.1); --ink:#f6f4ff; --soft:#b9b4d6;
+      --violet:#7c5cff; --cyan:#2ee6d6; --green:#34e0a1; --gold:#ffce4f; --pink:#ff6ba6; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:system-ui,sans-serif; background:radial-gradient(120% 100% at 50% -10%,#1b1147,#0b0720); color:var(--ink); min-height:100vh; }
+    header { padding:22px 28px; border-bottom:1px solid var(--edge); display:flex; align-items:center; gap:12px; }
+    header h1 { font-size:20px; margin:0; } header .tag { font-size:12px; color:var(--soft); background:var(--card); padding:4px 10px; border-radius:999px; border:1px solid var(--edge); }
+    main { max-width:1100px; margin:0 auto; padding:24px 20px 60px; }
+    h2 { font-size:15px; text-transform:uppercase; letter-spacing:.08em; color:var(--soft); margin:30px 0 12px; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:14px; }
+    .kpi { background:var(--card); border:1px solid var(--edge); border-radius:16px; padding:18px; }
+    .kpi b { display:block; font-size:30px; } .kpi span { font-size:12px; color:var(--soft); }
+    .kpi .sub { color:var(--cyan); font-weight:700; font-size:12px; margin-top:4px; }
+    .bars { background:var(--card); border:1px solid var(--edge); border-radius:16px; padding:18px; }
+    .bar { display:flex; align-items:center; gap:10px; margin-bottom:9px; }
+    .bar .lbl { flex:0 0 130px; font-size:13px; color:var(--soft); } .bar .track { flex:1; height:14px; background:rgba(255,255,255,.08); border-radius:999px; overflow:hidden; }
+    .bar .track i { display:block; height:100%; background:linear-gradient(90deg,var(--cyan),var(--violet)); border-radius:999px; }
+    .bar .val { flex:0 0 50px; text-align:right; font-weight:800; font-size:13px; }
+    table { width:100%; border-collapse:collapse; background:var(--card); border:1px solid var(--edge); border-radius:16px; overflow:hidden; font-size:13px; }
+    th,td { text-align:left; padding:10px 12px; border-bottom:1px solid var(--edge); } th { color:var(--soft); font-weight:700; }
+    .pill { font-size:11px; font-weight:800; padding:2px 8px; border-radius:999px; }
+    .ok { background:rgba(52,224,161,.16); color:var(--green); } .auto { background:rgba(255,206,79,.16); color:var(--gold); }
+    .gate { max-width:380px; margin:80px auto; background:var(--card); border:1px solid var(--edge); border-radius:18px; padding:24px; text-align:center; }
+    .gate input { width:100%; padding:12px; border-radius:12px; border:1px solid var(--edge); background:#0b0720; color:var(--ink); margin:12px 0; }
+    .gate button, .reload { background:linear-gradient(135deg,var(--cyan),var(--violet)); color:#fff; border:none; padding:12px 18px; border-radius:12px; font-weight:800; cursor:pointer; }
+    .muted { color:var(--soft); font-size:12px; }
+  </style>
+</head>
+<body>
+  <div id="app"><div class="gate">
+    <h1>🔐 wolio.ai Admin</h1>
+    <p class="muted">Internal analytics & content console</p>
+    <input id="key" type="password" placeholder="Admin key" value="wolio-admin" />
+    <button onclick="load()">Open console</button>
+  </div></div>
+
+  <script>
+    async function api(path) {
+      const key = document.getElementById("key") ? document.getElementById("key").value : (window._k || "");
+      window._k = key;
+      const r = await fetch(path, { headers: { "x-admin-key": key } });
+      if (!r.ok) throw new Error("auth");
+      return r.json();
+    }
+    function pct(n){ return Math.max(2, Math.round(n)); }
+    async function load() {
+      let a, c;
+      try { [a, c] = await Promise.all([api("/api/admin/analytics"), api("/api/admin/content")]); }
+      catch (e) { alert("Wrong admin key"); return; }
+      const maxMix = Math.max(1, ...a.event_mix.map(m => m.count));
+      document.getElementById("app").innerHTML = `
+        <main>
+          <h2>📊 Audience</h2>
+          <div class="grid">
+            ${kpi(a.users,"Total learners")}
+            ${kpi(a.dau,"Daily active","DAU")}
+            ${kpi(a.wau,"Weekly active","WAU")}
+            ${kpi(a.retention_pct+"%","Retention (D1+)")}
+            ${kpi(a.sessions,"Mission sessions")}
+          </div>
+          <h2>🎮 Engagement</h2>
+          <div class="grid">
+            ${kpi(a.engagement.missions,"Missions done")}
+            ${kpi(a.engagement.concepts,"Concepts learned")}
+            ${kpi(a.engagement.revisions,"Revisions")}
+            ${kpi(a.engagement.quick_learn,"Quick learns")}
+            ${kpi(a.economy.xp_awarded,"XP awarded")}
+            ${kpi(a.economy.coins_awarded,"Coins minted")}
+          </div>
+          <h2>💰 Monetization & 🔒 Safety</h2>
+          <div class="grid">
+            ${kpi(a.monetization.parents,"Parent accounts")}
+            ${kpi(a.monetization.premium,"Premium","subs")}
+            ${kpi(a.monetization.conversion_pct+"%","Conversion")}
+            ${kpi(a.safety_blocks,"Safety blocks","kid-safe filter")}
+          </div>
+          <h2>🧭 Event mix (data pipeline)</h2>
+          <div class="bars">
+            ${a.event_mix.map(m => `<div class="bar"><span class="lbl">${m.kind}</span>
+              <span class="track"><i style="width:${pct(m.count/maxMix*100)}%"></i></span>
+              <span class="val">${m.count}</span></div>`).join("") || '<span class="muted">No events yet</span>'}
+          </div>
+          <h2>📚 Content health — ${c.coverage_pct}% authored (${c.authored}/${c.missions} missions · ${c.worlds} worlds · ${c.shop_items} shop · ${c.achievements} badges)</h2>
+          <table><tr><th>World</th><th>Mission</th><th>Chapter</th><th>Game</th><th>Quiz</th><th>Status</th></tr>
+            ${c.catalog.flatMap(w => w.missions.map(m => `<tr>
+              <td>${w.emoji} ${w.name}</td><td>${m.title}</td><td>${m.chapter||"-"}</td>
+              <td>${m.game_type||"-"}</td><td>${m.quiz_count}</td>
+              <td><span class="pill ${m.authored?'ok':'auto'}">${m.authored?'authored':'auto-gen'}</span></td></tr>`).join("")).join("")}
+          </table>
+          <p style="margin-top:24px"><button class="reload" onclick="load()">↻ Refresh</button>
+            <span class="muted"> &nbsp;Core API target &lt;300ms · see X-Process-Time-ms response header</span></p>
+        </main>`;
+    }
+    function kpi(v,label,sub){ return `<div class="kpi"><b>${v}</b><span>${label}</span>${sub?`<div class="sub">${sub}</div>`:""}</div>`; }
+  </script>
+</body>
+</html>

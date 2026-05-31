@@ -352,11 +352,66 @@ def upgrade(data: UpgradeIn):
     try:
         child = _load_child(conn, data.child_id)
         pid = _ensure_parent(conn, child)
-        conn.execute("UPDATE parents SET plan=? WHERE id=?", (data.plan, pid))
+        if data.plan == "free":
+            conn.execute("UPDATE parents SET plan='free', status='active', renewal_date=NULL WHERE id=?", (pid,))
+        else:
+            # mock billing: 1-year subscription, auto-renew (real Razorpay/Stripe in ARCHITECTURE.md)
+            conn.execute(
+                "UPDATE parents SET plan=?, status='active', renewal_date=date('now','+365 day') WHERE id=?",
+                (data.plan, pid))
         conn.commit()
     finally:
         conn.close()
     return {"ok": True, "plan": data.plan}
+
+
+# --- 7.9 Billing & subscription ------------------------------------------
+@router.get("/billing/{child_id}")
+def billing(child_id: int):
+    conn = get_conn()
+    try:
+        child = _load_child(conn, child_id)
+        pid = _ensure_parent(conn, child)
+        p = conn.execute("SELECT plan, status, trial_ends, renewal_date FROM parents WHERE id=?", (pid,)).fetchone()
+    finally:
+        conn.close()
+    plan = p["plan"]
+    price = {"free": 0, "premium": 8000, "premium_plus": 25000}.get(plan, 0)
+    return {"plan": plan, "status": p["status"], "trial_ends": p["trial_ends"],
+            "renewal_date": p["renewal_date"], "price_inr": price,
+            "is_premium": plan != "free",
+            "payment_providers": ["Razorpay", "Stripe"]}   # wired in production
+
+
+@router.post("/trial/{child_id}")
+def start_trial(child_id: int):
+    conn = get_conn()
+    try:
+        child = _load_child(conn, child_id)
+        pid = _ensure_parent(conn, child)
+        row = conn.execute("SELECT trial_ends FROM parents WHERE id=?", (pid,)).fetchone()
+        if row["trial_ends"]:
+            raise HTTPException(400, "Trial already used")
+        conn.execute(
+            "UPDATE parents SET plan='premium', status='trialing', trial_ends=date('now','+14 day') WHERE id=?",
+            (pid,))
+        conn.commit()
+    finally:
+        conn.close()
+    return {"ok": True, "plan": "premium", "status": "trialing"}
+
+
+@router.post("/cancel/{child_id}")
+def cancel(child_id: int):
+    conn = get_conn()
+    try:
+        child = _load_child(conn, child_id)
+        pid = _ensure_parent(conn, child)
+        conn.execute("UPDATE parents SET plan='free', status='cancelled', renewal_date=NULL WHERE id=?", (pid,))
+        conn.commit()
+    finally:
+        conn.close()
+    return {"ok": True, "plan": "free", "status": "cancelled"}
 
 
 # --- 6.2 multi-child management ------------------------------------------

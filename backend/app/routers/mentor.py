@@ -4,6 +4,7 @@ from typing import Optional, List
 
 from ..db import get_conn, jload
 from ..brain import mentor_reply
+from .. import safety
 
 router = APIRouter(prefix="/api", tags=["mentor"])
 
@@ -20,8 +21,26 @@ class MentorIn(BaseModel):
     age_group: Optional[str] = None
 
 
+def _log_safety(user_id, reason, message):
+    if not user_id:
+        return
+    conn = get_conn()
+    try:
+        conn.execute("INSERT INTO events (user_id, kind, payload) VALUES (?,?,?)",
+                     (user_id, "safety_block", f'{{"reason":"{reason}"}}'))
+        conn.commit()
+    finally:
+        conn.close()
+
+
 @router.post("/mentor")
 def chat(data: MentorIn):
+    # 7.10 safety: screen the child's message before doing anything else.
+    gate = safety.check_input(data.message)
+    if not gate["safe"]:
+        _log_safety(data.user_id, gate["reason"], data.message)
+        return {"reply": gate["redirect"], "source": "safety", "mode": data.mode, "blocked": True}
+
     ctx = {
         "name": data.name or "buddy",
         "interests": data.interests or [],
@@ -44,4 +63,5 @@ def chat(data: MentorIn):
                 "age_group": row["age_group"],
             })
     result = mentor_reply(data.message, ctx)
-    return {"reply": result["reply"], "source": result["source"], "mode": data.mode}
+    safe_reply = safety.sanitize_output(result["reply"])  # scrub model output
+    return {"reply": safe_reply, "source": result["source"], "mode": data.mode, "blocked": False}

@@ -2,3 +2,7 @@ fastapi
 uvicorn[standard]
 pydantic
 # optional: openai  (enables live AI mentor when OPENAI_API_KEY is set)
+
+# dev / test
+pytest
+httpx

@@ -1,10 +1,12 @@
 """SQLite data layer for wolio.ai — single-file, zero-config."""
+import os
 import sqlite3
 import json
 from pathlib import Path
 from typing import Any, Optional
 
-DB_PATH = Path(__file__).resolve().parent.parent / "wolio.db"
+# Path is overridable via WOLIO_DB so tests (and staging) use an isolated file.
+DB_PATH = Path(os.getenv("WOLIO_DB", Path(__file__).resolve().parent.parent / "wolio.db"))
 
 
 def get_conn() -> sqlite3.Connection:
@@ -126,9 +128,17 @@ _CONCEPT_MIGRATIONS = {
     "keywords":       "TEXT",      # space-separated search terms
 }
 
+_PARENT_MIGRATIONS = {
+    "status":       "TEXT DEFAULT 'active'",   # active | trialing | cancelled
+    "trial_ends":   "TEXT",
+    "renewal_date": "TEXT",
+}
+
 
 def _migrate(conn: sqlite3.Connection) -> None:
-    for table, migrations in (("users", _USER_MIGRATIONS), ("concepts", _CONCEPT_MIGRATIONS)):
+    for table, migrations in (("users", _USER_MIGRATIONS),
+                              ("concepts", _CONCEPT_MIGRATIONS),
+                              ("parents", _PARENT_MIGRATIONS)):
         cols = {r["name"] for r in conn.execute(f"PRAGMA table_info({table})").fetchall()}
         for name, decl in migrations.items():
             if name not in cols:
