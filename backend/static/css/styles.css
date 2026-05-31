@@ -317,7 +317,9 @@ body[data-theme="comic"] .stars {
 .memcard .mstrength i { display: block; height: 100%; background: linear-gradient(90deg, var(--green), var(--cyan)); }
 
 /* bottom nav */
-.tabbar { position: sticky; bottom: 0; margin: 18px -22px -22px; padding: 10px 18px calc(12px + env(safe-area-inset-bottom));
+/* margin-top:auto pins the nav to the bottom of the screen even when the
+   page content is short — so there's never empty space below it. */
+.tabbar { position: sticky; bottom: 0; margin: auto -22px -22px; padding: 10px 18px calc(12px + env(safe-area-inset-bottom));
   display: flex; justify-content: space-around; background: rgba(11,7,32,.86); backdrop-filter: blur(12px);
   border-top: 1px solid var(--card-edge); }
 .tabbar button { background: none; color: var(--ink-soft); display: grid; justify-items: center; gap: 3px; font-size: 11px; font-weight: 800; }
