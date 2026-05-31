@@ -42,7 +42,7 @@ window.Home = (function () {
       </div>
 
       <!-- 2.2 Hero (AI recommendation) -->
-      <div class="hero fadein delay-1" style="background:linear-gradient(135deg, ${hero.color}, #ff6ba6)">
+      <div class="hero fadein delay-1">
         <div class="tag">✨ Recommended for you</div>
         <div class="hero-row">
           <div class="hero-ico">${hero.icon}</div>
@@ -56,7 +56,7 @@ window.Home = (function () {
       <div class="section fadein delay-1">
         <div class="section-h"><h3>▶ Continue your journey</h3><span class="muted" style="font-size:12px">${cont.progress}%</span></div>
         <div class="continue-card" id="contCard">
-          <div class="cc-emoji" style="background:linear-gradient(135deg, ${cont.color}, rgba(11,7,32,.4))">${cont.world_emoji}</div>
+          <div class="cc-emoji" style="background:var(--grad-cta)">${cont.world_emoji}</div>
           <div class="cc-body">
             <small>${UI.esc(cont.world_name)} · Mission</small>
             <b>${cont.mission_emoji} ${UI.esc(cont.mission_title)}</b>
@@ -69,7 +69,7 @@ window.Home = (function () {
       <!-- 2.4 Learning worlds -->
       <div class="section fadein delay-2">
         <div class="section-h"><h3>🌌 Learning Worlds</h3><a id="seeworlds">See all</a></div>
-        <div class="rail">${hp.worlds.map(worldCard).join("")}</div>
+        <div class="rail">${hp.worlds.map((w, i) => worldCard(w, i)).join("")}</div>
       </div>
 
       <!-- 2.5 Quick learn -->
@@ -161,11 +161,10 @@ window.Home = (function () {
     UI.toast("Pick a world to begin!");
   }
 
-  function worldCard(w) {
+  function worldCard(w, i) {
     const locked = !w.unlocked;
     return `
-      <div class="world ${locked ? "locked" : ""}" data-world="${w.id}"
-           style="background:linear-gradient(160deg, ${w.color}, rgba(11,7,32,.65))">
+      <div class="world g${(i || 0) % 5} ${locked ? "locked" : ""}" data-world="${w.id}">
         ${w.recommended ? `<span class="wbadge">★ For you</span>` : ""}
         ${locked ? `<span class="wlock">🔒</span>` : ""}
         <div class="wemoji">${w.emoji}</div>
@@ -260,9 +259,8 @@ window.Home = (function () {
     UI.render(`
       <div class="home-head fadein"><div class="who"><h2>🌌 Learning Worlds</h2><p>Choose your next adventure</p></div></div>
       <div class="stack fadein delay-1" style="margin-top:8px">
-        ${hp.worlds.map((w) => `
-          <div class="world wide ${w.unlocked ? "" : "locked"}" data-world="${w.id}"
-               style="background:linear-gradient(120deg, ${w.color}, rgba(11,7,32,.6))">
+        ${hp.worlds.map((w, i) => `
+          <div class="world wide g${i % 5} ${w.unlocked ? "" : "locked"}" data-world="${w.id}">
             <div class="wemoji">${w.emoji}</div>
             <div style="flex:1">
               <h4>${UI.esc(w.name)} ${w.recommended ? "★" : ""}</h4>

@@ -320,9 +320,10 @@ input::placeholder { color: var(--ink-soft); opacity: .6; }
   border-radius: 999px; background: var(--pink); color: #fff; font-size: 11px; font-weight: 900; font-style: normal;
   display: grid; place-items: center; box-shadow: 0 2px 8px rgba(255,107,166,.6); }
 
-/* 2.2 hero / AI recommendation */
-.hero { margin-top: 16px; border-radius: 22px; padding: 18px; position: relative; overflow: hidden;
-  box-shadow: 0 16px 40px rgba(124,92,255,.4); }
+/* 2.2 hero / AI recommendation — uses the active theme's gradient */
+.hero { margin-top: 16px; border-radius: 22px; padding: 18px; position: relative; overflow: hidden; color: #fff;
+  background: var(--grad-hero); box-shadow: 0 16px 40px rgba(124,92,255,.4); }
+.hero h3, .hero .tag { color: #fff; }
 .hero::after { content: ""; position: absolute; right: -40px; top: -40px; width: 150px; height: 150px;
   background: radial-gradient(circle, rgba(255,255,255,.3), transparent 70%); }
 .hero .tag { font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: .12em; opacity: .92; }
@@ -380,10 +381,18 @@ input::placeholder { color: var(--ink-soft); opacity: .6; }
 .rail::-webkit-scrollbar { height: 0; }
 .world { scroll-snap-align: start; flex: 0 0 150px; height: 180px; border-radius: 20px; padding: 14px;
   display: flex; flex-direction: column; justify-content: space-between; position: relative; overflow: hidden;
-  border: 1px solid var(--card-edge); transition: transform .15s; }
+  border: 1px solid var(--card-edge); transition: transform .15s; color: #fff;
+  background: linear-gradient(155deg, var(--violet), rgba(8,6,22,.55)); }
+/* world cards derive their colours from the active theme's accents (so they
+   always harmonise with the theme) — distinct per world, dark base keeps text legible */
+.world.g0 { background: linear-gradient(155deg, var(--violet) 0%, rgba(8,6,22,.5) 135%); }
+.world.g1 { background: linear-gradient(155deg, var(--cyan) 0%, rgba(8,6,22,.5) 135%); }
+.world.g2 { background: linear-gradient(155deg, var(--pink) 0%, rgba(8,6,22,.5) 135%); }
+.world.g3 { background: linear-gradient(155deg, var(--green) 0%, rgba(8,6,22,.5) 135%); }
+.world.g4 { background: linear-gradient(155deg, var(--gold) 0%, rgba(8,6,22,.5) 135%); }
 .world:active { transform: scale(.97); }
 .world .wemoji { font-size: 40px; }
-.world h4 { margin: 0; font-size: 16px; }
+.world h4 { margin: 0; font-size: 16px; color: #fff; }
 .world small { color: rgba(255,255,255,.8); font-size: 12px; font-weight: 700; }
 .world .bar { height: 6px; border-radius: 999px; background: var(--track); margin-top: 8px; overflow: hidden; }
 .world .bar i { display: block; height: 100%; background: #fff; border-radius: 999px; }
