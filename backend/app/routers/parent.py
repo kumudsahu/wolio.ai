@@ -130,10 +130,36 @@ def dashboard(child_id: int):
         recent = conn.execute(
             "SELECT COUNT(*) c FROM concepts WHERE user_id=? AND julianday('now')-julianday(learned_at)<=14",
             (child_id,)).fetchone()["c"]
-        today_min = _learning_minutes([e for e in events if (e["created_at"] or "")[:10] ==
-                                       conn.execute("SELECT date('now') d").fetchone()["d"]])
+        today = conn.execute("SELECT date('now') d").fetchone()["d"]
+        today_min = _learning_minutes([e for e in events if (e["created_at"] or "")[:10] == today])
+        # AI-safety panel data (chat summaries + blocked attempts)
+        ai_chats = [dict(r) for r in conn.execute(
+            "SELECT payload, created_at FROM events WHERE user_id=? AND kind='ai_chat'", (child_id,)).fetchall()]
+        blocked = [dict(r) for r in conn.execute(
+            "SELECT payload FROM events WHERE user_id=? AND kind IN ('safety_block','safety_emotional')",
+            (child_id,)).fetchall()]
+        restricted = jload(child.get("restricted_topics"), [])
     finally:
         conn.close()
+
+    ai_today = sum(1 for e in ai_chats if (e["created_at"] or "")[:10] == today)
+    topics = []
+    for e in ai_chats:
+        t = jload(e["payload"], {}).get("topic")
+        if t and t not in topics:
+            topics.append(t)
+    blocked_cats = {}
+    for b in blocked:
+        cat = jload(b["payload"], {}).get("category", "blocked")
+        blocked_cats[cat] = blocked_cats.get(cat, 0) + 1
+    ai_safety = {
+        "daily_ai_minutes": ai_today,        # ~1 min per AI exchange
+        "total_chats": len(ai_chats),
+        "topics_discussed": topics[-8:],
+        "blocked_attempts": sum(blocked_cats.values()),
+        "blocked_by_category": [{"category": k, "count": v} for k, v in blocked_cats.items()],
+        "restricted_topics": restricted,
+    }
 
     accuracy = 1.0
     if events:
@@ -184,6 +210,7 @@ def dashboard(child_id: int):
         "goals": {"daily_min": goal_min, "subject": child.get("goal_subject"),
                   "today_min": today_min, "on_track": today_min >= goal_min},
         "controls": {"screen_limit_min": child.get("screen_limit_min") or 60, "used_today": today_min},
+        "ai_safety": ai_safety,
         "notifications": notifications,
     }
 
@@ -326,16 +353,23 @@ def set_goals(data: GoalsIn):
 
 class ControlsIn(BaseModel):
     child_id: int
-    screen_limit_min: int
+    screen_limit_min: Optional[int] = None
+    restricted_topics: Optional[List[str]] = None
 
 
 @router.post("/controls")
 def set_controls(data: ControlsIn):
     conn = get_conn()
     try:
-        conn.execute("UPDATE users SET screen_limit_min=? WHERE id=?",
-                     (data.screen_limit_min, data.child_id))
-        conn.commit()
+        fields, params = [], []
+        if data.screen_limit_min is not None:
+            fields.append("screen_limit_min=?"); params.append(data.screen_limit_min)
+        if data.restricted_topics is not None:
+            fields.append("restricted_topics=?"); params.append(jdump(data.restricted_topics))
+        if fields:
+            params.append(data.child_id)
+            conn.execute(f"UPDATE users SET {', '.join(fields)} WHERE id=?", params)
+            conn.commit()
     finally:
         conn.close()
     return {"ok": True}

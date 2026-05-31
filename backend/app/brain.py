@@ -288,53 +288,50 @@ def _offline_reply(message: str, ctx: dict) -> str:
     return pre + body
 
 
-def mentor_reply(message: str, ctx: dict, mode: str = "fun", history=None) -> dict:
+def mentor_reply(message: str, ctx: dict, mode: str = "fun", history=None, sensitive: bool = False) -> dict:
     """Return {'reply': str, 'source': 'llm'|'offline'}. mode: fun|quick|quiz."""
     key = os.getenv("OPENAI_API_KEY")
     if key:
         try:
-            return {"reply": _llm_reply(message, ctx, key, mode, history or []), "source": "llm"}
+            return {"reply": _llm_reply(message, ctx, key, mode, history or [], sensitive), "source": "llm"}
         except Exception:
             pass  # graceful fallback — never break the kid's flow
-    return {"reply": _offline_reply_mode(message, ctx, mode), "source": "offline"}
+    return {"reply": _offline_reply_mode(message, ctx, mode, sensitive), "source": "offline"}
 
 
-def _offline_reply_mode(message: str, ctx: dict, mode: str) -> str:
+def _age_flair(age_group: str, topic: str, fl: str) -> str:
+    """Age-based phrasing (spec 6): playful for the young, precise for teens."""
+    if age_group in ("3-5", "6-8"):
+        return f"think of {topic} like a giant invisible hug from {fl} 🤗"
+    if age_group in ("13-16", "16-18"):
+        return f"{topic} works in a precise, science-y way — picture it through {fl}"
+    return f"imagine {topic} using {fl} — that makes it click"
+
+
+def _offline_reply_mode(message: str, ctx: dict, mode: str, sensitive: bool = False) -> str:
     name = ctx.get("name", "buddy")
     fl = flavor(ctx.get("interests"))
+    age = ctx.get("age_group", "9-12")
     topic = message.replace("Explain", "").replace("explain", "").strip(" ?.") or "this"
+    if sensitive:
+        return (f"Good question, {name}. That's a real part of the world, and it's okay to wonder about it. "
+                f"The simple, safe version: it's something grown-ups handle, and a trusted adult can tell you more. "
+                f"Want to get back to a fun discovery? 🌟")
     if mode == "quick":
-        return f"Quick version, {name}: think of {topic} using {fl} — that's the heart of it! ⚡"
+        return f"Quick version, {name}: {_age_flair(age, topic, fl)}. ⚡"
     if mode == "quiz":
         return (f"Quiz time, {name}! 🧠 Here's one about {topic}: "
                 f"if you explained it using {fl}, what would the FIRST step be? "
                 f"Type your guess and I'll tell you if you're right! 🎯")
-    return _offline_reply(message, ctx)
+    return f"Ooooh great question! So {name}, {_age_flair(age, topic, fl)}. Want a 60-sec mission or a fun story? 🚀"
 
 
-# mode → instruction appended to the LLM system prompt
-_MODE_INSTRUCTION = {
-    "fun": "Explain with a tiny playful story and emojis.",
-    "quick": "Answer in 2-3 short lines. No fluff.",
-    "quiz": "Don't explain — ask ONE fun quiz question about the topic and invite a guess.",
-}
-
-
-def _llm_reply(message: str, ctx: dict, key: str, mode: str = "fun", history=None) -> str:
+def _llm_reply(message: str, ctx: dict, key: str, mode: str = "fun", history=None, sensitive: bool = False) -> str:
     from openai import OpenAI  # imported lazily; only if a key is present
+    from . import safety
 
     client = OpenAI(api_key=key)
-    recent = ctx.get("recent_learning")
-    system = (
-        f"You are Wolio, a fun AI mentor for a child named {ctx.get('name','friend')}, "
-        f"age group {ctx.get('age_group','9-12')}. Talk like an excited friend, NOT a teacher. "
-        f"Tone: {ctx.get('tone','fun')}. Language: {ctx.get('language','hinglish')} "
-        f"(Hinglish = casual Hindi+English mix). Use the child's interests "
-        f"({', '.join(ctx.get('interests') or ['space'])}) for every example. "
-        + (f"They recently learned: {recent}. " if recent else "")
-        + f"{_MODE_INSTRUCTION.get(mode, _MODE_INSTRUCTION['fun'])} "
-        f"Keep it under 60 words, warm, kid-safe, with one emoji."
-    )
+    system = safety.system_prompt(ctx, mode=mode, sensitive=sensitive)   # kid-safe personality
     # include the last few turns for session memory (spec: last 5)
     msgs = [{"role": "system", "content": system}]
     for h in (history or [])[-5:]:
@@ -343,5 +340,5 @@ def _llm_reply(message: str, ctx: dict, key: str, mode: str = "fun", history=Non
     msgs.append({"role": "user", "content": message})
 
     resp = client.chat.completions.create(
-        model="gpt-4o-mini", messages=msgs, max_tokens=160, temperature=0.8)
+        model="gpt-4o-mini", messages=msgs, max_tokens=160, temperature=0.7)
     return resp.choices[0].message.content.strip()

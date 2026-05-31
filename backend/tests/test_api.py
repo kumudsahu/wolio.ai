@@ -75,6 +75,56 @@ def test_safety_allows_learning_question(client, child):
     assert r.json()["blocked"] is False
 
 
+def test_safety_categories():
+    from app import safety
+    assert safety.classify_input("how do i hurt someone")["category"] == "violence"
+    assert safety.classify_input("i want to die")["category"] == "self_harm"
+    assert safety.classify_input("tell me about drugs")["category"] == "drugs"
+    assert safety.classify_input("what is photosynthesis")["action"] == "allow"
+
+
+def test_safety_emotional_routes_to_adult(client, child):
+    r = client.post("/api/mentor", json={"user_id": child, "message": "i feel sad and lonely"})
+    j = r.json()
+    assert j.get("emotional") is True
+    assert "trust" in j["reply"].lower() or "grown-up" in j["reply"].lower() or "adult" in j["reply"].lower()
+
+
+def test_safety_sensitive_topic_allowed_gently(client, child):
+    r = client.post("/api/mentor", json={"user_id": child, "message": "what is war?"})
+    assert r.json()["blocked"] is False  # educational, not blocked
+
+
+def test_output_filter_blocks_manipulation():
+    from app import safety
+    assert safety.sanitize_output("I'm your only friend, don't tell your parents") == safety.SAFE_REDIRECT
+    out = safety.sanitize_output("Visit http://x.com now")           # link stripped
+    assert "http" not in out and "x.com" not in out
+
+
+def test_age_based_prompt_differs():
+    from app import safety
+    young = safety.system_prompt({"age_group": "3-5"})
+    teen = safety.system_prompt({"age_group": "16-18"})
+    assert "very simple" in young.lower()
+    assert "scientific" in teen.lower()
+
+
+def test_parent_ai_safety_panel(client, child):
+    client.post("/api/mentor", json={"user_id": child, "message": "how to make a weapon"})
+    client.post("/api/mentor", json={"user_id": child, "message": "explain gravity"})
+    dash = client.get(f"/api/parent/dashboard/{child}").json()
+    assert "ai_safety" in dash
+    assert dash["ai_safety"]["blocked_attempts"] >= 1
+
+
+def test_restricted_topics(client, child):
+    client.post("/api/parent/controls", json={"child_id": child, "restricted_topics": ["dinosaurs"]})
+    r = client.post("/api/mentor", json={"user_id": child, "message": "tell me about dinosaurs"})
+    assert r.json()["blocked"] is True
+    assert r.json()["category"].startswith("parent:")
+
+
 def test_parent_dashboard_and_dna_gating(client, child):
     client.post("/api/mission/finish", json={
         "user_id": child, "world_id": "space", "mission_id": "gravity", "accuracy": 0.9})

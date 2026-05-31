@@ -78,13 +78,29 @@ maps 1:1 to a future microservice. Extract to separate services when load demand
 - **Prod TODO:** Razorpay (India) + Stripe (global) webhooks, invoices,
   auto-renew. No real charges happen today.
 
-## 7.10 Safety & child protection — **implemented**
-- `safety.check_input` blocks unsafe topics (violence, self-harm, adult, PII /
-  contact requests) and returns a gentle redirect; `safety.sanitize_output`
-  strips URLs/emails/phones from AI replies (no external links/ads for kids).
-- Blocks are logged as `safety_block` events and surfaced on `/admin`.
-- **Prod TODO:** add a moderation API (OpenAI/Perspective) as a second layer,
-  manual review queue, and data-privacy compliance (COPPA/GDPR-K) processes.
+## 7.10 Safety & child protection — **implemented (multi-layer)**
+The **Child-Safe AI Architecture** — a *guided / walled-garden* companion, not
+an open chatbot. Pipeline: `input → INPUT FILTER → AI → OUTPUT FILTER → reply`.
+- **Layer 1 input filter** (`safety.classify_input`): categorized blocks
+  (self-harm, violence, sexual, drugs, gambling, hate, contact/PII) → refuse +
+  positive redirect; **emotional distress** → gentle support that points to a
+  trusted adult; **sensitive-but-educational** (war/death/…) → allowed but
+  answered gently & age-appropriately; **parent-restricted topics** → redirect.
+- **Layer 2 output filter** (`safety.sanitize_output`): strips links/emails/
+  phones, and **blocks dependency/manipulation/isolation phrases** ("I'm your
+  only friend", "don't tell your parents", "I love you", "keep this secret").
+- **Layer 3 kid-safe personality** (`safety.system_prompt`): hard rules
+  (encourage curiosity, never form dependency, never isolate from
+  parents/friends, no adult/unsafe topics) + **age-based styling**
+  (3-5 playful → 16-18 scientific) + walled-garden scope.
+- **Parent safety layer**: dashboard shows daily AI minutes, topics discussed,
+  and blocked attempts by category; parents can **restrict topics**.
+- **Healthy usage**: mentor nudges an "adventure break" after a long session.
+- Events logged: `ai_chat` (topic only, never raw text), `safety_block`,
+  `safety_emotional` → surfaced on `/admin` and the parent panel.
+- **Prod TODO:** add a moderation API (OpenAI/Perspective) as the outer layer,
+  a human review queue, curated knowledge base (no open web), and COPPA/GDPR-K
+  compliance processes.
 
 ## 7.11 Analytics dashboard — **implemented** (`/admin`)
 - DAU/WAU, D1 retention, sessions, engagement funnel, event mix, monetization

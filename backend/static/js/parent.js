@@ -97,6 +97,21 @@ window.Parent = (function () {
           <div class="qt"><b>Screen limit: ${D.controls.screen_limit_min} min</b><span>${D.controls.used_today}m used today</span></div><div class="qx">→</div></button>
       </div>
 
+      <!-- AI safety panel (child-safe AI) -->
+      <div class="section fadein delay-3"><div class="section-h"><h3>🛡️ AI safety</h3><span class="pill" style="font-size:11px">Guided AI</span></div>
+        <div class="tiles" style="margin-bottom:10px">
+          <div class="tile"><b>${D.ai_safety.daily_ai_minutes}m</b><span>AI today</span></div>
+          <div class="tile"><b>${D.ai_safety.total_chats}</b><span>chats</span></div>
+          <div class="tile"><b style="color:${D.ai_safety.blocked_attempts?'var(--pink)':'var(--green)'}">${D.ai_safety.blocked_attempts}</b><span>blocked</span></div>
+        </div>
+        ${D.ai_safety.topics_discussed.length ? `<div class="quest"><div class="qi">💬</div>
+          <div class="qt"><b>Topics discussed</b><span>${D.ai_safety.topics_discussed.map(UI.esc).join(", ")}</span></div></div>` : ""}
+        ${D.ai_safety.blocked_attempts ? `<div class="quest" style="margin-top:10px"><div class="qi">🚫</div>
+          <div class="qt"><b>Blocked attempts</b><span>${D.ai_safety.blocked_by_category.map((b) => UI.esc(b.category) + " ×" + b.count).join(", ")}</span></div></div>` : ""}
+        <button class="quest" id="restrict" style="text-align:left;margin-top:10px"><div class="qi">🔧</div>
+          <div class="qt"><b>Restricted topics</b><span>${D.ai_safety.restricted_topics.length ? D.ai_safety.restricted_topics.map(UI.esc).join(", ") : "None — tap to turn topics off"}</span></div><div class="qx">→</div></button>
+      </div>
+
       <!-- reports + DNA -->
       <div class="section fadein delay-4"><div class="section-h"><h3>📄 Reports</h3></div>
         <div class="row" style="gap:8px">
@@ -124,6 +139,7 @@ window.Parent = (function () {
     document.getElementById("switch").onclick = openChildren;
     document.getElementById("goals").onclick = openGoals;
     document.getElementById("controls").onclick = openControls;
+    document.getElementById("restrict").onclick = openRestrict;
     document.getElementById("dna").onclick = () => premium ? openDna() : openUpgrade();
     wire();
   }
@@ -252,6 +268,30 @@ window.Parent = (function () {
     });
     sheet.querySelector("#saveCtl").onclick = async () => {
       await API.parentControls({ child_id: cid(), screen_limit_min: lim });
+      sheet.remove(); UI.toast("Saved ✓"); open(cid());
+    };
+  }
+
+  /* ---------- topic restrictions (child-safe AI) ---------- */
+  function openRestrict() {
+    const topics = ["war", "violence", "scary stories", "death", "money", "video games"];
+    const current = new Set(D.ai_safety.restricted_topics || []);
+    const sheet = UI.h(`
+      <div class="sheet"><div class="scrim"></div><div class="panel">
+        <div class="phead"><b>🔧 Restricted topics</b><button class="close">✕</button></div>
+        <div style="padding:16px">
+          <p class="muted" style="font-size:13px;margin:0 0 12px">Turn topics OFF — the AI will gently redirect if your child asks about them.</p>
+          <div class="choices grid-2" id="rt">${topics.map((t) => `<button class="choice ${current.has(t) ? "selected" : ""}" data-t="${t}">${UI.esc(t)}</button>`).join("")}</div>
+          <button class="btn btn--block" id="saveRt" style="margin-top:16px">Save</button>
+        </div>
+      </div></div>`);
+    mountSheet(sheet);
+    sheet.querySelectorAll("#rt .choice").forEach((b) => b.onclick = () => {
+      b.classList.toggle("selected");
+      current.has(b.dataset.t) ? current.delete(b.dataset.t) : current.add(b.dataset.t);
+    });
+    sheet.querySelector("#saveRt").onclick = async () => {
+      await API.parentControls({ child_id: cid(), restricted_topics: [...current] });
       sheet.remove(); UI.toast("Saved ✓"); open(cid());
     };
   }

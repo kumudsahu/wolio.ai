@@ -34,7 +34,7 @@ window.Mentor = (function () {
             <button class="chip" data-q="Quiz me">🧮 Quiz me</button>
           </div>
           <div class="composer">
-            <input id="mi" placeholder="Ask me anything…" autocomplete="off" />
+            <input id="mi" placeholder="Ask about your learning universe…" autocomplete="off" />
             <button id="send">➤</button>
           </div>
         </div>
@@ -48,7 +48,7 @@ window.Mentor = (function () {
     sheet.querySelector(".close").onclick = close;
 
     if (!history.length) {
-      addBot(chat, `Hey ${name}! 😎 I'm Wolio. Ask me anything — I'll explain it using stuff you love!`);
+      addBot(chat, `Hey ${name}! 😎 I'm Wolio. Ask me about your learning universe 🌌 — space, math, stories, anything you're curious about!`);
     } else {
       history.forEach((m) => bubble(chat, m.role, m.text));
     }
@@ -69,6 +69,11 @@ window.Mentor = (function () {
         typing.remove();
         addBot(chat, r.reply);
         history.push({ role: "bot", text: r.reply });
+        // 9. healthy usage — gentle break reminder after a long session
+        const turns = history.filter((m) => m.role === "me").length;
+        if (turns > 0 && turns % 8 === 0) {
+          setTimeout(() => addBot(chat, "You've explored a lot today 🚀 Maybe take a short adventure break and go play outside? I'll be here later! 🌳"), 900);
+        }
       } catch (e) {
         typing.remove();
         addBot(chat, "Oops, my brain hiccuped 😅 try again!");
