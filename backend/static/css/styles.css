@@ -241,6 +241,10 @@ body[data-theme="comic"] .stars {
   background: rgba(255,206,79,.16); color: var(--gold); padding: 7px 11px; border-radius: 999px; border: 1px solid rgba(255,206,79,.3); }
 
 .section { margin-top: 22px; }
+/* A section header used directly on the page (flat layouts like Memory) gets
+   the same top rhythm as a .section block; headers inside a .section keep just
+   their bottom gap so the header stays tight to its content. */
+.screen > .section-h { margin-top: 22px; }
 .section-h { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
 .section-h h3 { font-size: 16px; margin: 0; }
 .section-h a { font-size: 13px; color: var(--cyan); font-weight: 800; text-decoration: none; }
