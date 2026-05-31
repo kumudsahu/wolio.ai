@@ -2,6 +2,7 @@
    Email → 6-digit code → either log in (returning) or start onboarding (new). */
 window.Auth = (function () {
   let email = "";
+  const DEV_CODE = "123456";   // dev master code — always works (see auth.py DEMO_AUTH_CODE)
 
   function start() { screenEmail(); }
 
@@ -48,11 +49,11 @@ window.Auth = (function () {
         <p class="subtitle center">We sent a 6-digit code to <b>${UI.esc(email)}</b></p>
       </div>
       <input class="field" id="code" inputmode="numeric" maxlength="6" autocomplete="one-time-code"
-             placeholder="••••••" style="text-align:center;letter-spacing:8px;font-size:24px" />
-      ${demoCode ? `<div class="auth-demo">🔑 Demo code: <b>${UI.esc(demoCode)}</b></div>` : ""}
+             value="${DEV_CODE}" placeholder="••••••" style="text-align:center;letter-spacing:8px;font-size:24px" />
+      <div class="auth-demo">🔑 Dev code: <b>${DEV_CODE}</b> — always works${demoCode ? ` · sent: ${UI.esc(demoCode)}` : ""}</div>
       <div id="err" class="auth-err"></div>
       <div class="cta-bar stack">
-        <button class="btn btn--block" id="verify" disabled>Verify & continue →</button>
+        <button class="btn btn--block" id="verify">Verify & continue →</button>
         <button class="btn btn--ghost btn--block" id="change">Use a different email</button>
       </div>
     `);

@@ -5,6 +5,7 @@ stored hashed with a TTL. For this demo we keep codes in memory and return the
 code so it's testable without a mail service. Returning users (email already
 attached to an onboarded child) log straight in and skip onboarding.
 """
+import os
 import re
 import random
 from fastapi import APIRouter, HTTPException
@@ -16,6 +17,10 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 _CODES: dict = {}   # email -> code (in-memory, demo only)
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+# Dev master code — always accepted so developers can sign in with any email
+# without reading the emailed code. Set DEMO_AUTH_CODE="" to disable in prod.
+DEMO_MASTER_CODE = os.getenv("DEMO_AUTH_CODE", "123456")
 
 
 class EmailIn(BaseModel):
@@ -41,7 +46,9 @@ class VerifyIn(BaseModel):
 @router.post("/verify")
 def verify(data: VerifyIn):
     email = data.email.strip().lower()
-    if _CODES.get(email) != data.code.strip():
+    code = data.code.strip()
+    is_master = bool(DEMO_MASTER_CODE) and code == DEMO_MASTER_CODE
+    if not is_master and _CODES.get(email) != code:
         raise HTTPException(401, "That code isn't right (or expired). Try again.")
     _CODES.pop(email, None)
     conn = get_conn()
