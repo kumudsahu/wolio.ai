@@ -757,54 +757,8 @@ window.Home = (function () {
     wireTabs();
   }
 
-  async function parentDashboard() {
-    UI.render(`<div class="builder"><div class="ring"></div><p class="build-step">Building growth report…</p></div>`);
-    let s;
-    try { s = await API.insights(App.userId()); }
-    catch (e) { UI.toast("Couldn't load report"); return renderProfile(); }
-
-    const maxg = Math.max(1, ...s.growth.map((g) => g.count));
-    UI.render(`
-      <div class="home-head fadein"><button class="pill" onclick="Home.parentGate()">←</button>
-        <div class="who"><h2>${UI.esc(s.name)}'s Growth Story</h2><p>AI Learning DNA · premium</p></div></div>
-
-      <div class="memcard fadein delay-1" style="margin-top:8px">
-        <div class="mtitle">🧠 ${UI.esc(s.name)} has learned <b>${s.total_concepts}</b> concept${s.total_concepts !== 1 ? "s" : ""}</div>
-        <div class="mstrength"><i style="width:${s.memory_strength}%"></i></div>
-        <div class="muted" style="font-size:13px">Memory ${s.memory_strength}% (${s.retention_label}) · ${s.mastered} mastered · ${s.total_xp} XP</div>
-      </div>
-
-      <!-- growth graph -->
-      <div class="section fadein delay-2"><div class="section-h"><h3>📈 Growth over time</h3></div>
-        ${s.growth.length ? `<div class="growth">
-          ${s.growth.map((g) => `<div class="gbar"><i style="height:${Math.round(g.count / maxg * 100)}%"></i><span>${UI.esc(g.label)}</span></div>`).join("")}
-        </div>` : `<div class="muted">No data yet — keep learning!</div>`}
-      </div>
-
-      <!-- subject strengths -->
-      <div class="section fadein delay-2"><div class="section-h"><h3>📚 Subject strengths</h3></div>
-        <div class="stack">${(s.subjects.length ? s.subjects : [{subject:"—",avg_mastery:0,level:"—",count:0}]).map((sub) => `
-          <div class="quest"><div class="qi">${subjEmoji(sub.subject)}</div>
-            <div class="qt"><b>${UI.esc(sub.subject)} · ${sub.count}</b>
-              <div class="qbar"><i style="width:${sub.avg_mastery}%"></i></div></div>
-            <div class="qx" style="color:${sub.avg_mastery>=60?'var(--green)':sub.avg_mastery>=35?'var(--gold)':'var(--pink)'}">${UI.esc(sub.level)}</div></div>`).join("")}
-        </div>
-      </div>
-
-      <div class="row fadein delay-3" style="gap:10px">
-        <div class="tile" style="flex:1"><b style="color:var(--green)">${s.strong.length}</b><span>strong areas</span></div>
-        <div class="tile" style="flex:1"><b style="color:var(--pink)">${s.weak.length}</b><span>to revisit</span></div>
-      </div>
-
-      <div class="section fadein delay-3"><div class="section-h"><h3>🧬 AI insight</h3></div>
-        <div class="bubble">${UI.esc(s.intelligence)}</div>
-      </div>
-      <button class="btn btn--block fadein delay-3" style="margin-top:14px" onclick="UI.toast('Premium: full AI Learning DNA report 📄')">📄 Generate full DNA report</button>
-      ${tabbar("profile")}
-    `);
-    wireTabs();
-  }
-  function subjEmoji(s) { return { Science: "🔬", Math: "🧮", Literature: "📖", History: "⏳", Biology: "🌱", Physics: "🚀", Music: "🎵" }[s] || "📚"; }
+  // The full parent dashboard lives in Parent (parent.js).
+  function parentDashboard() { Parent.open(App.userId()); }
 
   /* ================= NAV ================= */
   function tabbar(active) {
@@ -841,5 +795,6 @@ window.Home = (function () {
   }
   function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
 
-  return { enter, renderHome, parentGate, _tab, _back, getMe: () => me };
+  return { enter, renderHome, parentGate, _tab, _back, getMe: () => me,
+           tabbar, wireTabs, subjEmoji: (s) => ({ Science: "🔬", Math: "🧮", Literature: "📖", History: "⏳", Biology: "🌱", Physics: "🚀", Music: "🎵" }[s] || "📚") };
 })();

@@ -95,6 +95,13 @@ CREATE TABLE IF NOT EXISTS achievements (
     unlocked_at   TEXT DEFAULT (datetime('now')),
     UNIQUE(user_id, badge_id)
 );
+
+CREATE TABLE IF NOT EXISTS parents (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    pin           TEXT DEFAULT '1234',
+    plan          TEXT DEFAULT 'free',       -- free | premium | premium_plus
+    created_at    TEXT DEFAULT (datetime('now'))
+);
 """
 
 # Columns added after the first release. SQLite's CREATE TABLE IF NOT EXISTS
@@ -107,6 +114,10 @@ _USER_MIGRATIONS = {
     "longest_streak": "INTEGER DEFAULT 0",
     "last_active":    "TEXT",
     "unlocked":       "TEXT",      # JSON list of owned shop item ids
+    "parent_id":      "INTEGER",   # which parent account owns this child
+    "goal_daily_min": "INTEGER DEFAULT 20",
+    "goal_subject":   "TEXT",      # subject the parent wants to focus on
+    "screen_limit_min": "INTEGER DEFAULT 60",
 }
 
 _CONCEPT_MIGRATIONS = {

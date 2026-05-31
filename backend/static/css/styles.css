@@ -340,6 +340,44 @@ button { font-family: inherit; cursor: pointer; border: none; }
   border-radius: 14px; font-weight: 800; font-size: 14px; opacity: 0; z-index: 50; transition: .3s; box-shadow: var(--shadow); }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+/* ============== PARENT DASHBOARD + PREMIUM (Step 6) ============== */
+.premium-banner { margin-top: 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  background: linear-gradient(135deg, rgba(255,206,79,.18), rgba(124,92,255,.16)); border: 1px solid rgba(255,206,79,.35);
+  border-radius: 16px; padding: 14px 16px; }
+.premium-banner b { font-size: 14px; display: block; } .premium-banner span { font-size: 12px; color: var(--ink-soft); }
+.premium-banner.on { justify-content: center; font-weight: 800; font-size: 13px; color: var(--gold); }
+
+/* skill growth bars */
+.skills { display: flex; flex-direction: column; gap: 12px; }
+.skill-row { display: flex; align-items: center; gap: 10px; }
+.skill-row .sk-label { flex: 0 0 130px; font-size: 13px; font-weight: 700; }
+.skill-row .sk-bar { flex: 1; height: 12px; border-radius: 999px; background: rgba(255,255,255,.1); overflow: hidden; }
+.skill-row .sk-bar i { display: block; height: 100%; border-radius: 999px; transition: width .6s cubic-bezier(.22,1,.36,1); }
+.skill-row .sk-val { flex: 0 0 38px; text-align: right; font-weight: 900; font-size: 13px; }
+
+/* interest map */
+.int-row { display: flex; align-items: center; gap: 10px; }
+.int-row .int-label { flex: 0 0 120px; font-size: 13px; font-weight: 700; }
+.int-row .int-bar { flex: 1; height: 12px; border-radius: 999px; background: rgba(255,255,255,.1); overflow: hidden; }
+.int-row .int-bar i { display: block; height: 100%; background: var(--grad-hero); border-radius: 999px; }
+.int-row .int-pct { flex: 0 0 40px; text-align: right; font-weight: 800; font-size: 13px; color: var(--violet-2); }
+
+/* DNA report */
+.dna { background: var(--card); border: 1px solid var(--card-edge); border-radius: 20px; padding: 18px; }
+.dna-row { padding: 10px 0; border-bottom: 1px solid var(--card-edge); }
+.dna-row:last-of-type { border-bottom: none; }
+.dna-row b { font-size: 13px; color: var(--cyan); } .dna-row p { margin: 4px 0 0; font-size: 15px; font-weight: 700; }
+.dna-skills { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 14px 0 4px; }
+.dna-skill { text-align: center; background: rgba(255,255,255,.05); border-radius: 12px; padding: 10px 4px; }
+.dna-skill b { display: block; font-family: "Fredoka"; font-size: 18px; } .dna-skill span { font-size: 9px; color: var(--ink-soft); }
+
+/* premium plans */
+.plan { position: relative; border: 1px solid var(--card-edge); border-radius: 16px; padding: 14px; margin-bottom: 12px; }
+.plan b { font-size: 16px; } .plan > span { display: block; font-size: 12px; color: var(--ink-soft); margin-top: 2px; }
+.plan .plan-price { font-family: "Fredoka"; font-size: 22px; margin-top: 6px; } .plan .plan-price small { font-size: 13px; color: var(--ink-soft); }
+.plan.best { border-color: rgba(255,206,79,.5); background: linear-gradient(160deg, rgba(255,206,79,.12), rgba(124,92,255,.1)); }
+.plan .plan-tag { position: absolute; top: -9px; right: 14px; background: var(--gold); color: #2a1c66; font-size: 10px; font-weight: 900; padding: 2px 8px; border-radius: 999px; }
+
 /* ============== REWARD ECONOMY (Step 5) ============== */
 .coinchip { display: inline-flex; align-items: center; gap: 4px; font-weight: 900; font-size: 13px;
   background: rgba(255,206,79,.16); color: var(--gold); padding: 6px 10px; border-radius: 999px; border: 1px solid rgba(255,206,79,.3); white-space: nowrap; }
