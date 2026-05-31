@@ -30,6 +30,9 @@ window.API = {
   quickLearn: (payload) => API._post("/api/quick-learn", payload),
   missionGet: (world, mission, uid) => API._get(`/api/mission/${world}/${mission}${uid ? `?user_id=${uid}` : ""}`),
   missionFinish: (payload) => API._post("/api/mission/finish", payload),
+  shop: (id) => API._get(`/api/shop/${id}`),
+  buyItem: (user_id, item_id) => API._post("/api/shop/buy", { user_id, item_id }),
+  achievements: (id) => API._get(`/api/achievements/${id}`),
   worlds: (id) => API._get(`/api/worlds${id ? `?user_id=${id}` : ""}`),
   completeMission: (user_id, world_id, mission_id) =>
     API._post("/api/missions/complete", { user_id, world_id, mission_id }),

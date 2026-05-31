@@ -12,7 +12,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
 from .db import init_db
-from .routers import onboarding, worlds, timeline, mentor, home, mission
+from .routers import onboarding, worlds, timeline, mentor, home, mission, rewards
 
 STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
 
@@ -42,6 +42,7 @@ app.include_router(timeline.router)
 app.include_router(mentor.router)
 app.include_router(home.router)
 app.include_router(mission.router)
+app.include_router(rewards.router)
 
 # Static assets (css/js/img) under /static, and the SPA at /.
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")

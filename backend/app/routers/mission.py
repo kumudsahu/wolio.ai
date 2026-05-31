@@ -11,6 +11,7 @@ from typing import Optional
 from ..db import get_conn
 from ..brain import WORLDS
 from ..content import get_playbook, level_label, level_index, make_keywords
+from .. import economy
 
 router = APIRouter(prefix="/api", tags=["mission"])
 
@@ -107,12 +108,16 @@ def finish_mission(data: FinishIn):
             )
 
         # XP: base + accuracy bonus (+ first-clear bonus). Challenge mode pays more.
-        base = 50 if not existing else 25
+        base = economy.XP["mission"] if not existing else 25
         xp_earned = base + int(acc * 30) + (15 if data.mode == "challenge" else 0)
-        xp = (user["xp"] or 0) + xp_earned
+        coins = economy.COINS["mission"] + (economy.COINS["challenge"] if data.mode == "challenge" else 0)
+
+        # central economy mutation: XP + coins + daily streak + level-up
+        result = economy.award(conn, data.user_id, xp=xp_earned, coins=coins,
+                               reason=f"mission:{data.world_id}/{data.mission_id}")
         conn.execute(
-            "UPDATE users SET xp=?, last_world=?, last_mission=? WHERE id=?",
-            (xp, data.world_id, data.mission_id, data.user_id),
+            "UPDATE users SET last_world=?, last_mission=? WHERE id=?",
+            (data.world_id, data.mission_id, data.user_id),
         )
         conn.execute(
             "INSERT INTO events (user_id, kind, payload) VALUES (?,?,?)",
@@ -126,12 +131,17 @@ def finish_mission(data: FinishIn):
         conn.close()
 
     return {
-        "xp_earned": xp_earned,
-        "total_xp": xp,
+        "xp_earned": result["xp_added"],
+        "coins_earned": result["coins_added"],
+        "streak_bonus": result["streak_bonus"],
+        "total_xp": result["total_xp"],
+        "total_coins": result["total_coins"],
+        "streak": result["streak"],
+        "tier_up": result["level_up"],          # named tier level-up (Beginner→Explorer…)
         "concept_saved": mission["concept"],
         "emoji": mission["emoji"],
         "mastery": new_mastery,
-        "level": level_label(new_mastery),
-        "leveled_up": leveled_up,
+        "level": level_label(new_mastery),       # per-concept mastery level
+        "leveled_up": leveled_up,                # mastery level changed
         "accuracy": round(acc, 2),
     }

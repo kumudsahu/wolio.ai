@@ -8,6 +8,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from ..db import get_conn, jload
+from .. import economy
 from ..brain import (
     WORLDS, rank_worlds, greeting, recommend_action, daily_quest_set,
     quick_learn_for, notifications, time_of_day,
@@ -80,21 +81,43 @@ def homepage(user_id: int):
         _ensure_today_quests(conn, user_id, user.get("difficulty_tier") or 1, day)
         progress = _quest_progress(conn, user_id, day)
 
-        # Award XP for any quest that just crossed its target (once).
+        # Award XP + coins for any quest that just crossed its target (once).
         quest_rows = [dict(r) for r in conn.execute(
             "SELECT * FROM daily_quests WHERE user_id=? AND day=? ORDER BY id", (user_id, day)
         ).fetchall()]
         xp = user.get("xp") or 0
+        coins = user.get("coins") or 0
         for q in quest_rows:
             done = progress.get(q["task_id"], 0) >= q["target"]
             if done and not q["claimed"]:
-                xp += q["reward"]
+                res = economy.award(conn, user_id, xp=q["reward"], coins=economy.COINS["quest"],
+                                    reason=f"quest:{q['task_id']}")
+                xp, coins = res["total_xp"], res["total_coins"]
                 conn.execute("UPDATE daily_quests SET claimed=1 WHERE id=?", (q["id"],))
-        if xp != (user.get("xp") or 0):
-            conn.execute("UPDATE users SET xp=? WHERE id=?", (xp, user_id))
+
+        # Achievements: detect & record newly-earned badges.
+        missions_done = conn.execute(
+            "SELECT COUNT(*) c FROM events WHERE user_id=? AND kind='mission'", (user_id,)).fetchone()["c"]
+        revisions = conn.execute(
+            "SELECT COALESCE(SUM(count),0) s FROM revision_logs WHERE user_id=?", (user_id,)).fetchone()["s"]
+        mastered = sum(1 for c in concepts if c["mastery"] >= 80)
+        ach_stats = {
+            "concepts": len(concepts), "mastered": mastered,
+            "longest_streak": user.get("longest_streak") or 0,
+            "missions": missions_done, "coins_earned": economy.coins_earned_total(conn, user_id),
+            "tier_index": economy.tier_index(xp), "revisions": revisions,
+        }
+        ach = economy.sync_achievements(conn, user_id, ach_stats)
+        # award coins for each freshly-earned achievement
+        for _ in ach["newly"]:
+            res = economy.award(conn, user_id, coins=economy.COINS["achievement"], reason="achievement")
+            coins = res["total_coins"]
         conn.commit()
+        streak = conn.execute("SELECT streak FROM users WHERE id=?", (user_id,)).fetchone()["streak"]
     finally:
         conn.close()
+
+    level = economy.level_block(xp)
 
     hour = _hour_now()
     slot = time_of_day(hour)
@@ -160,12 +183,15 @@ def homepage(user_id: int):
         "daily_quests": quests_out,
         "quests_done": sum(1 for q in quests_out if q["done"]),
         "memory": {"recent": recent, "strength": avg_strength, "due_count": len(needs_revision)},
+        "coins": coins,
+        "level": level,                       # tier, next_tier, progress, nudge
+        "new_achievements": ach["newly"],     # ids freshly unlocked this load
         "stats": {
-            "xp": xp, "streak": user.get("streak") or 0,
+            "xp": xp, "coins": coins, "streak": streak,
             "concepts": len(concepts), "mastered": mastered,
-            "level": xp // 100 + 1,
+            "tier": level["tier"], "tier_index": level["tier_index"],
         },
-        "notifications": notifications(user.get("streak") or 0, needs_revision, len(concepts), slot),
+        "notifications": notifications(streak, needs_revision, len(concepts), slot),
         "user": {"name": user["name"], "avatar": jload(user.get("avatar"), {}), "tone": user.get("tone")},
     }
 
@@ -206,6 +232,8 @@ def quick_learn_seen(data: QuickLearnIn):
                      '["quick_learn"]', make_keywords(data.title, data.subject)),
                 )
                 saved = True
+        # small coin reward for engaging with a bite
+        economy.award(conn, data.user_id, coins=economy.COINS["quick_learn"], reason="quick_learn")
         conn.commit()
     finally:
         conn.close()

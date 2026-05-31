@@ -267,6 +267,8 @@ window.Mission = (function () {
     } catch (e) { UI.toast("Saved offline — couldn't sync"); return Home.enter({}); }
 
     const stars = Math.max(1, Math.round(acc * 3));
+    // 5.10 reward feedback — confetti for a great run or a tier-up
+    if (r.tier_up || stars === 3) setTimeout(() => UI.confetti(), 150);
     UI.render(`
       <div class="reward fadein">
         <div class="reward-burst">${M.mission.emoji}</div>
@@ -275,10 +277,12 @@ window.Mission = (function () {
         <p class="subtitle center">${Math.round(acc * 100)}% accuracy · ${UI.esc(M.mission.concept)} locked in 🧠</p>
         <div class="tiles" style="margin:6px 0 4px">
           <div class="tile"><b>+${r.xp_earned}</b><span>XP</span></div>
+          <div class="tile"><b>🪙 +${r.coins_earned}</b><span>coins</span></div>
           <div class="tile"><b>${r.mastery}%</b><span>mastery</span></div>
-          <div class="tile"><b>${UI.esc(r.level)}</b><span>level</span></div>
         </div>
-        ${r.leveled_up ? `<div class="pill" style="margin:8px auto 0;color:var(--gold)">⬆️ Level up: ${UI.esc(r.level)}!</div>` : ""}
+        ${r.streak_bonus ? `<div class="pill" style="margin:8px auto 0">🔥 +${r.streak_bonus} streak bonus · ${r.streak}-day streak!</div>` : ""}
+        ${r.tier_up ? `<div class="tier-up">${r.tier_up.emoji} Level up — you're a ${UI.esc(r.tier_up.name)}!<small>${UI.esc(r.tier_up.perk)}</small></div>` : ""}
+        ${r.leveled_up ? `<div class="pill" style="margin:8px auto 0;color:var(--gold)">⬆️ ${UI.esc(M.mission.concept)}: ${UI.esc(r.level)}</div>` : ""}
       </div>
       <div class="cta-bar stack">
         <button class="btn btn--block" id="cont">Continue 🚀</button>

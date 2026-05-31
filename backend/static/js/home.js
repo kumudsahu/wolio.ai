@@ -35,7 +35,8 @@ window.Home = (function () {
       <!-- 2.1 Top bar -->
       <div class="topbar fadein">
         <button class="avatar-btn" id="toProfile"><span>${me.avatar.emoji || "🦊"}</span></button>
-        <div class="greet"><b>${g.text} ${g.emoji}</b><span>Level ${hp.stats.level} · ${hp.stats.xp} XP</span></div>
+        <div class="greet"><b>${g.text} ${g.emoji}</b><span>${hp.level.tier.emoji} ${hp.level.tier.name} · ${hp.stats.xp} XP</span></div>
+        <span class="coinchip">🪙 ${hp.coins}</span>
         <button class="icon-btn" id="bell">🔔${unread ? `<i class="dot">${unread}</i>` : ""}</button>
         <button class="icon-btn" id="gear">⚙️</button>
       </div>
@@ -104,11 +105,19 @@ window.Home = (function () {
         </div>
       </div>
 
-      <!-- 2.8 Progress snapshot -->
+      <!-- 2.8 Progress + level tier -->
       <div class="section fadein delay-4">
         <div class="section-h"><h3>📊 Progress</h3><a id="seeStats">Details</a></div>
-        <div class="tiles" id="statTiles">
-          <div class="tile"><b>${hp.stats.xp}</b><span>XP</span></div>
+        <div class="levelcard" id="levelCard">
+          <div class="lc-top">
+            <span class="lc-tier">${hp.level.tier.emoji} ${hp.level.tier.name}</span>
+            ${hp.level.next_tier ? `<span class="muted" style="font-size:12px">${hp.level.next_tier.emoji} ${hp.level.next_tier.name}</span>` : `<span class="muted" style="font-size:12px">Max tier 👑</span>`}
+          </div>
+          <div class="lc-bar"><i style="width:${hp.level.progress}%"></i></div>
+          <div class="lc-nudge">🤖 ${UI.esc(hp.level.nudge)}</div>
+        </div>
+        <div class="tiles" id="statTiles" style="margin-top:10px">
+          <div class="tile"><b>🪙 ${hp.coins}</b><span>coins</span></div>
           <div class="tile"><b>${hp.stats.concepts}</b><span>concepts</span></div>
           <div class="tile"><b>${hp.memory.strength}%</b><span>memory 🧠</span></div>
         </div>
@@ -130,9 +139,16 @@ window.Home = (function () {
     const rs = document.getElementById("reviseShortcut");
     if (rs) rs.onclick = (e) => { e.stopPropagation(); reviseScope("needs_revision"); };
     document.getElementById("memCard").onclick = renderMemory;
+    document.getElementById("levelCard").onclick = openAnalytics;
     document.querySelectorAll("[data-world]").forEach((el) => el.onclick = () => openWorld(el.dataset.world));
     document.querySelectorAll("[data-ql]").forEach((el) => el.onclick = () => openQuickLearn(+el.dataset.ql));
     wireTabs();
+
+    // 5.10 reward feedback: celebrate freshly-earned achievements
+    if (hp.new_achievements && hp.new_achievements.length) {
+      UI.confetti();
+      UI.toast(`🏅 ${hp.new_achievements.length} new achievement${hp.new_achievements.length > 1 ? "s" : ""} unlocked!`);
+    }
   }
 
   function heroCtaIcon(kind) {
@@ -544,12 +560,20 @@ window.Home = (function () {
       <div class="profile-hero fadein delay-1">
         <div class="mascot">${me.avatar.emoji || "🦊"}</div>
         <h2 style="margin:6px 0 2px">${UI.esc(me.name)}</h2>
-        <p class="muted" style="margin:0">Level ${hp.stats.level} · ${hp.stats.xp} XP · 🔥 ${hp.stats.streak}</p>
+        <div class="row" style="justify-content:center;gap:6px;margin:4px 0">
+          <span class="tierbadge">${hp.level.tier.emoji} ${hp.level.tier.name}</span>
+          <span class="coinchip">🪙 ${hp.coins}</span>
+          <span class="pill">🔥 ${hp.stats.streak}</span>
+        </div>
+        <div class="lc-bar" style="max-width:240px;margin:8px auto 0"><i style="width:${hp.level.progress}%"></i></div>
+        <p class="muted" style="margin:6px 0 0;font-size:12px">${hp.stats.xp} XP · ${UI.esc(hp.level.nudge)}</p>
         <div class="row" style="flex-wrap:wrap;justify-content:center;gap:6px;margin-top:10px">
           ${interests.map((i) => `<span class="pill">${UI.esc(i)}</span>`).join("") || `<span class="muted">No interests yet</span>`}
         </div>
       </div>
       <div class="stack fadein delay-2" style="margin-top:16px">
+        <button class="quest" id="pShop" style="text-align:left"><div class="qi">🛍️</div><div class="qt"><b>Avatar Shop</b><span>Spend coins on new looks</span></div><div class="qx">🪙 ${hp.coins}</div></button>
+        <button class="quest" id="pAch" style="text-align:left"><div class="qi">🏅</div><div class="qt"><b>Achievements</b><span>Your unlocked badges</span></div><div class="qx">→</div></button>
         <button class="quest" id="pEdit" style="text-align:left"><div class="qi">🎭</div><div class="qt"><b>Edit avatar</b><span>Change your hero look</span></div><div class="qx">→</div></button>
         <button class="quest" id="pSettings" style="text-align:left"><div class="qi">⚙️</div><div class="qt"><b>Settings</b><span>Language, mentor vibe, voice</span></div><div class="qx">→</div></button>
         <button class="quest" id="pParent" style="text-align:left"><div class="qi">👨‍👩‍👧</div><div class="qt"><b>Parent Zone</b><span>Reports & growth story (PIN)</span></div><div class="qx">→</div></button>
@@ -557,10 +581,78 @@ window.Home = (function () {
       </div>
       ${tabbar("profile")}
     `);
+    document.getElementById("pShop").onclick = renderShop;
+    document.getElementById("pAch").onclick = renderAchievements;
     document.getElementById("pEdit").onclick = openAvatarSheet;
     document.getElementById("pSettings").onclick = renderSettings;
     document.getElementById("pParent").onclick = parentGate;
     document.getElementById("pReset").onclick = () => { App.clear(); App.welcome(); };
+    wireTabs();
+  }
+
+  /* ================= 5.6 AVATAR SHOP ================= */
+  async function renderShop() {
+    tab = "profile";
+    let d;
+    try { d = await API.shop(App.userId()); }
+    catch (e) { UI.toast("Couldn't load shop"); return renderProfile(); }
+    UI.render(`
+      <div class="home-head fadein"><button class="pill" onclick="Home._tab('profile')">←</button>
+        <div class="who"><h2>🛍️ Avatar Shop</h2><p>Spend coins, unlock heroes</p></div>
+        <span class="coinchip">🪙 ${d.coins}</span></div>
+      <div class="shop-grid fadein delay-1">
+        ${d.items.map((it) => {
+          const state = it.owned ? "owned" : it.tier_locked ? "tier" : it.affordable ? "buy" : "poor";
+          return `
+          <div class="shop-item ${state}" data-buy="${it.id}" data-emoji="${it.emoji}" data-state="${state}">
+            <div class="si-emoji">${it.emoji}</div>
+            <b>${UI.esc(it.name)}</b>
+            <span class="si-cost">${
+              it.owned ? (d.equipped === it.emoji ? "✓ Equipped" : "Tap to equip")
+              : it.tier_locked ? `🔒 ${it.tier_name}`
+              : `🪙 ${it.cost}`}</span>
+          </div>`;
+        }).join("")}
+      </div>
+      ${tabbar("profile")}
+    `);
+    document.querySelectorAll("[data-buy]").forEach((el) => el.onclick = async () => {
+      const id = el.dataset.buy, state = el.dataset.state;
+      if (state === "owned") {       // equip
+        await API.updatePrefs(App.userId(), { avatar: { ...me.avatar, emoji: el.dataset.emoji } });
+        me.avatar.emoji = el.dataset.emoji; UI.toast("Equipped! 🦸"); renderShop(); return;
+      }
+      if (state === "tier") { UI.toast("🔒 Reach a higher tier to unlock this!"); return; }
+      if (state === "poor") { UI.toast("Not enough coins — keep learning! 🪙"); return; }
+      try {
+        const r = await API.buyItem(App.userId(), id);
+        me.avatar.emoji = r.equipped;
+        UI.confetti(); UI.toast(`Unlocked & equipped! 🪙 ${r.coins} left`);
+        await refresh(); renderShop();
+      } catch (e) { UI.toast("Purchase failed"); }
+    });
+    wireTabs();
+  }
+
+  /* ================= 5.7 ACHIEVEMENTS ================= */
+  async function renderAchievements() {
+    tab = "profile";
+    let d;
+    try { d = await API.achievements(App.userId()); }
+    catch (e) { UI.toast("Couldn't load achievements"); return renderProfile(); }
+    UI.render(`
+      <div class="home-head fadein"><button class="pill" onclick="Home._tab('profile')">←</button>
+        <div class="who"><h2>🏅 Achievements</h2><p>${d.earned} of ${d.total} unlocked</p></div></div>
+      <div class="ach-grid fadein delay-1">
+        ${d.items.map((a) => `
+          <div class="ach ${a.earned ? "earned" : ""}">
+            <div class="ach-ico">${a.icon}</div>
+            <b>${UI.esc(a.name)}</b>
+            <small>${a.earned ? "✓ Unlocked" : UI.esc(a.desc)}</small>
+          </div>`).join("")}
+      </div>
+      ${tabbar("profile")}
+    `);
     wireTabs();
   }
 

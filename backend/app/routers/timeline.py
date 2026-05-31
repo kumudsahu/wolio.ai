@@ -10,6 +10,7 @@ from pydantic import BaseModel
 from collections import defaultdict, OrderedDict
 
 from ..db import get_conn, jload
+from .. import economy
 
 router = APIRouter(prefix="/api", tags=["timeline"])
 
@@ -240,6 +241,9 @@ def revise(data: ReviseIn):
                 "INSERT INTO events (user_id, kind, payload) VALUES (?,?,?)",
                 (data.user_id, "revision", f'{{"count":{len(ids)}}}'),
             )
+            # reward the revision (XP + coins, advances streak)
+            reward = economy.award(conn, data.user_id, xp=economy.XP["revision"],
+                                   coins=economy.COINS["revision"], reason=f"revision:{data.scope}")
             conn.commit()
     finally:
         conn.close()
@@ -249,7 +253,10 @@ def revise(data: ReviseIn):
         "learned_via": r["learned_via"], "summary": r["summary"],
         "front": f"What did you learn about {r['title']}?",
     } for r in rows]
-    return {"scope": data.scope, "count": len(cards), "cards": cards}
+    out = {"scope": data.scope, "count": len(cards), "cards": cards}
+    if ids:
+        out["reward"] = {"xp": reward["xp_added"], "coins": reward["coins_added"], "tier_up": reward["level_up"]}
+    return out
 
 
 class ConceptReviseIn(BaseModel):
@@ -280,6 +287,8 @@ def revise_concept(data: ConceptReviseIn):
             "INSERT INTO events (user_id, kind, payload) VALUES (?,?,?)",
             (data.user_id, "revision", '{"count":1}'),
         )
+        economy.award(conn, data.user_id, xp=economy.XP["revision"],
+                     coins=economy.COINS["revision"], reason="revision:card")
         conn.commit()
         r = dict(row)
     finally:

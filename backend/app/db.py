@@ -78,14 +78,35 @@ CREATE TABLE IF NOT EXISTS revision_logs (
     count         INTEGER DEFAULT 1,         -- concepts touched in the session
     created_at    TEXT DEFAULT (datetime('now'))
 );
+
+CREATE TABLE IF NOT EXISTS ledger (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id       INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    kind          TEXT,                      -- xp | coin
+    amount        INTEGER,                   -- +earn / -spend
+    reason        TEXT,
+    created_at    TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS achievements (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id       INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    badge_id      TEXT,
+    unlocked_at   TEXT DEFAULT (datetime('now')),
+    UNIQUE(user_id, badge_id)
+);
 """
 
 # Columns added after the first release. SQLite's CREATE TABLE IF NOT EXISTS
 # won't touch an existing table, so we add them defensively at startup.
 _USER_MIGRATIONS = {
-    "last_world":    "TEXT",
-    "last_mission":  "TEXT",
-    "last_progress": "INTEGER DEFAULT 0",
+    "last_world":     "TEXT",
+    "last_mission":   "TEXT",
+    "last_progress":  "INTEGER DEFAULT 0",
+    "coins":          "INTEGER DEFAULT 0",
+    "longest_streak": "INTEGER DEFAULT 0",
+    "last_active":    "TEXT",
+    "unlocked":       "TEXT",      # JSON list of owned shop item ids
 }
 
 _CONCEPT_MIGRATIONS = {
