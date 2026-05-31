@@ -2,9 +2,20 @@
    Rendered behind the PIN gate (Home.parentGate → parentDashboard → Parent.open). */
 window.Parent = (function () {
   let D = null;            // current dashboard payload
+  let idleTimer = null;    // auto-logout after inactivity (security)
   const tab = () => Home.tabbar("profile");
   const wire = () => Home.wireTabs();
   const cid = () => App.userId();
+
+  function armIdle() {
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(() => {
+      if (document.querySelector(".screen[data-parent]")) {
+        UI.toast("Parent mode locked (inactivity) 🔒");
+        Home._tab("home");
+      }
+    }, 90000);
+  }
 
   async function open(childId) {
     UI.render(`<div class="builder"><div class="ring"></div><p class="build-step">Building parent dashboard…</p></div>`);
@@ -103,6 +114,11 @@ window.Parent = (function () {
 
       ${tab()}
     `);
+    // auto-logout guard: mark this screen + reset idle timer on interaction
+    const root = document.querySelector(".screen");
+    if (root) { root.dataset.parent = "1"; root.addEventListener("pointerdown", armIdle); }
+    armIdle();
+
     const up = document.getElementById("upgrade");
     if (up) up.onclick = openUpgrade;
     document.getElementById("switch").onclick = openChildren;

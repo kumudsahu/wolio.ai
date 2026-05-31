@@ -88,21 +88,13 @@ window.Home = (function () {
         <div class="stack">${hp.daily_quests.map(questRow).join("")}</div>
       </div>
 
-      <!-- 2.7 Memory shortcut -->
+      <!-- 2.7 Memory shortcut — top-2 urgency-ranked suggestion cards -->
       <div class="section fadein delay-3">
-        <div class="section-h"><h3>🧬 Your Memory</h3><a id="seemem">Open timeline</a></div>
-        <div class="memcard" id="memCard">
-          <div class="mtitle">${hp.memory.recent
-            ? "You learned " + hp.memory.recent.emoji + " " + UI.esc(hp.memory.recent.title) + " " + ago(hp.memory.recent.learned_at)
-            : "Your brain archive starts here 🧠"}</div>
-          <div class="mstrength"><i style="width:${hp.memory.strength}%"></i></div>
-          <div class="row" style="justify-content:space-between;align-items:center">
-            <span class="muted" style="font-size:13px">${hp.memory.due_count
-              ? hp.memory.due_count + " concept" + (hp.memory.due_count > 1 ? "s" : "") + " want a revision"
-              : "Everything's fresh! 🔥"}</span>
-            ${hp.memory.recent ? `<button class="pill" id="reviseShortcut">⚡ Revise</button>` : ""}
-          </div>
-        </div>
+        <div class="section-h"><h3>🧬 Your Memory</h3><a id="seemem">View all learning</a></div>
+        ${(hp.memory.suggestions && hp.memory.suggestions.length)
+          ? `<div class="stack">${hp.memory.suggestions.map(memSuggestCard).join("")}</div>`
+          : `<div class="memcard"><div class="mtitle">Your brain archive starts here 🧠</div>
+               <div class="muted" style="font-size:13px;margin-top:6px">Complete a mission and it appears here forever.</div></div>`}
       </div>
 
       <!-- 2.8 Progress + level tier -->
@@ -126,8 +118,15 @@ window.Home = (function () {
       ${tabbar("home")}
     `);
 
-    // wiring
-    document.getElementById("toProfile").onclick = renderProfile;
+    // wiring — tap avatar → profile; long-press (hidden) → parent mode
+    const av = document.getElementById("toProfile");
+    let lp = null, lpFired = false;
+    const startLP = () => { lpFired = false; lp = setTimeout(() => { lpFired = true; parentGate(); }, 650); };
+    const endLP = () => clearTimeout(lp);
+    av.addEventListener("pointerdown", startLP);
+    av.addEventListener("pointerup", endLP);
+    av.addEventListener("pointerleave", endLP);
+    av.onclick = () => { if (!lpFired) renderProfile(); };
     document.getElementById("bell").onclick = openNotifications;
     document.getElementById("gear").onclick = renderSettings;
     document.getElementById("heroCta").onclick = () => runHero(hero);
@@ -136,9 +135,10 @@ window.Home = (function () {
     document.getElementById("seeworlds").onclick = renderWorlds;
     document.getElementById("seemem").onclick = renderMemory;
     document.getElementById("seeStats").onclick = openAnalytics;
-    const rs = document.getElementById("reviseShortcut");
-    if (rs) rs.onclick = (e) => { e.stopPropagation(); reviseScope("needs_revision"); };
-    document.getElementById("memCard").onclick = renderMemory;
+    document.querySelectorAll("[data-revise-cid]").forEach((el) => el.onclick = (e) => {
+      e.stopPropagation(); reviseConceptFlow(+el.dataset.reviseCid);
+    });
+    document.querySelectorAll("[data-mem-open]").forEach((el) => el.onclick = () => openMemoryCard(+el.dataset.memOpen));
     document.getElementById("levelCard").onclick = openAnalytics;
     document.querySelectorAll("[data-world]").forEach((el) => el.onclick = () => openWorld(el.dataset.world));
     document.querySelectorAll("[data-ql]").forEach((el) => el.onclick = () => openQuickLearn(+el.dataset.ql));
@@ -175,6 +175,31 @@ window.Home = (function () {
           <div class="bar"><i style="width:${w.progress}%"></i></div>
         </div>
       </div>`;
+  }
+
+  // 2.7 memory shortcut card with fresh/mid/weak states
+  function memSuggestCard(s) {
+    const cfg = {
+      fresh: { cls: "fresh", title: `You learned ${s.emoji} ${UI.esc(s.topic)}`, sub: s.days < 1 ? "today 🚀" : ago2(s.days), cta: "Review" },
+      mid:   { cls: "mid",   title: `Revisit ${s.emoji} ${UI.esc(s.topic)}?`, sub: ago2(s.days) + " · keep it sharp", cta: "Revise" },
+      weak:  { cls: "weak",  title: `${s.emoji} ${UI.esc(s.topic)} is fading`, sub: "⚠️ revise before you forget", cta: "Revise" },
+    }[s.state] || { cls: "mid", title: UI.esc(s.topic), sub: "", cta: "Revise" };
+    return `
+      <div class="memsuggest ${cfg.cls}" data-mem-open="${s.concept_id}">
+        <div class="ms-ico">${s.emoji}</div>
+        <div class="ms-body"><b>${cfg.title}</b><span>${cfg.sub}</span></div>
+        <button class="pill ms-cta" data-revise-cid="${s.concept_id}">⚡ ${cfg.cta}</button>
+      </div>`;
+  }
+  function ago2(days) { return days < 1 ? "today" : days === 1 ? "yesterday" : days + " days ago"; }
+
+  // one-tap revision from a memory card → bump + flashcard
+  async function reviseConceptFlow(cid) {
+    try {
+      const r = await API.reviseConcept(App.userId(), cid);
+      await refresh();
+      runFlashcards([r.card], 0);
+    } catch (e) { UI.toast("Couldn't start revision"); }
   }
 
   function questRow(q) {
@@ -796,5 +821,6 @@ window.Home = (function () {
   function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
 
   return { enter, renderHome, parentGate, _tab, _back, getMe: () => me,
+           getRecentTopic: () => (hp && hp.memory && hp.memory.recent) ? hp.memory.recent.title : null,
            tabbar, wireTabs, subjEmoji: (s) => ({ Science: "🔬", Math: "🧮", Literature: "📖", History: "⏳", Biology: "🌱", Physics: "🚀", Music: "🎵" }[s] || "📚") };
 })();

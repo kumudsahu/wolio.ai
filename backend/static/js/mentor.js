@@ -1,6 +1,7 @@
 /* Floating AI Mentor — always-visible buddy with a chat sheet. */
 window.Mentor = (function () {
   let history = [];
+  let mode = "fun";   // fun | quick | quiz
 
   function mount() {
     const root = document.getElementById("mentor-root");
@@ -11,6 +12,7 @@ window.Mentor = (function () {
   function open(seed) {
     const me = Home.getMe && Home.getMe();
     const name = me ? me.name : "buddy";
+    const topic = Home.getRecentTopic && Home.getRecentTopic();
     const sheet = UI.h(`
       <div class="sheet">
         <div class="scrim"></div>
@@ -20,11 +22,16 @@ window.Mentor = (function () {
             <div><b>Wolio</b><br><small>your AI buddy${me && me.tone ? " · " + me.tone : ""}</small></div>
             <button class="close">✕</button>
           </div>
+          <div class="modes" id="modes">
+            <button class="mode-btn" data-mode="fun">😜 Fun</button>
+            <button class="mode-btn" data-mode="quick">⚡ Quick</button>
+            <button class="mode-btn" data-mode="quiz">🧠 Quiz</button>
+          </div>
           <div class="chat" id="chat"></div>
           <div class="chips" id="chips">
-            <button class="chip" data-q="Explain gravity like I'm 8">🪐 Explain gravity</button>
+            ${topic ? `<button class="chip" data-q="Explain ${UI.esc(topic)}">📌 Explain ${UI.esc(topic)}</button>` : ""}
             <button class="chip" data-q="Give me a fun fact">✨ Fun fact</button>
-            <button class="chip" data-q="Quiz me on math">🧮 Quiz me</button>
+            <button class="chip" data-q="Quiz me">🧮 Quiz me</button>
           </div>
           <div class="composer">
             <input id="mi" placeholder="Ask me anything…" autocomplete="off" />
@@ -55,7 +62,8 @@ window.Mentor = (function () {
       const typing = bubble(chat, "bot typing", "Wolio is thinking… 💭");
       try {
         const me2 = Home.getMe && Home.getMe();
-        const r = await API.mentor({ user_id: App.userId(), message: text,
+        const r = await API.mentor({ user_id: App.userId(), message: text, mode,
+          history: history.slice(-5), current_topic: Home.getRecentTopic && Home.getRecentTopic(),
           name: me2 && me2.name, interests: me2 && me2.interests,
           language: me2 && me2.language, tone: me2 && me2.tone, age_group: me2 && me2.age_group });
         typing.remove();
@@ -66,6 +74,12 @@ window.Mentor = (function () {
         addBot(chat, "Oops, my brain hiccuped 😅 try again!");
       }
     };
+
+    // mode toggle (Fun / Quick / Quiz)
+    const paintModes = () => sheet.querySelectorAll(".mode-btn").forEach((b) =>
+      b.classList.toggle("active", b.dataset.mode === mode));
+    sheet.querySelectorAll(".mode-btn").forEach((b) => b.onclick = () => { mode = b.dataset.mode; paintModes(); });
+    paintModes();
 
     sheet.querySelector("#send").onclick = () => send();
     input.addEventListener("keydown", (e) => { if (e.key === "Enter") send(); });

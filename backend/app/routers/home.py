@@ -166,6 +166,16 @@ def homepage(user_id: int):
     if concepts:
         c = concepts[0]
         recent = {"title": c["title"], "emoji": c["emoji"], "learned_at": c["learned_at"]}
+    # top-2 urgency-ranked revision suggestions for the homepage shortcut
+    from .timeline import memory_suggestions
+    now = datetime.utcnow()
+    for c in concepts:
+        ts = (c.get("last_revised") or c.get("learned_at") or "").replace("T", " ")[:19]
+        try:
+            c["_days_since"] = max(0, (now - datetime.fromisoformat(ts)).days)
+        except ValueError:
+            c["_days_since"] = 0
+    suggestions = memory_suggestions(concepts)
 
     quests_out = [{
         "id": q["task_id"], "icon": q["icon"], "label": q["label"],
@@ -182,7 +192,8 @@ def homepage(user_id: int):
         "quick_learn": quick_learn_for(interests),
         "daily_quests": quests_out,
         "quests_done": sum(1 for q in quests_out if q["done"]),
-        "memory": {"recent": recent, "strength": avg_strength, "due_count": len(needs_revision)},
+        "memory": {"recent": recent, "strength": avg_strength, "due_count": len(needs_revision),
+                   "suggestions": suggestions},
         "coins": coins,
         "level": level,                       # tier, next_tier, progress, nudge
         "new_achievements": ach["newly"],     # ids freshly unlocked this load

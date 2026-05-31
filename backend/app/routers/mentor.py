@@ -13,6 +13,8 @@ class MentorIn(BaseModel):
     user_id: Optional[int] = None
     message: str
     mode: str = "fun"  # fun | quick | quiz
+    history: Optional[List[dict]] = None       # last few turns for session memory
+    current_topic: Optional[str] = None        # what they're learning right now
     # allow anonymous chat (e.g. during onboarding) with inline context
     name: Optional[str] = None
     interests: Optional[List[str]] = None
@@ -62,6 +64,8 @@ def chat(data: MentorIn):
                 "tone": row["tone"],
                 "age_group": row["age_group"],
             })
-    result = mentor_reply(data.message, ctx)
+    if data.current_topic:
+        ctx["recent_learning"] = data.current_topic
+    result = mentor_reply(data.message, ctx, mode=data.mode, history=data.history)
     safe_reply = safety.sanitize_output(result["reply"])  # scrub model output
     return {"reply": safe_reply, "source": result["source"], "mode": data.mode, "blocked": False}

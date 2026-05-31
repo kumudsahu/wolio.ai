@@ -220,22 +220,27 @@ def recommend_action(name: str, ranked_worlds: list, last_world: str, last_missi
 
 
 def notifications(streak: int, needs_revision: list, concepts_count: int, slot: str) -> list:
-    """Smart, non-spammy alerts for the bell."""
+    """Smart, non-spammy alerts for the bell.
+
+    Each has a priority; we sort high→low and cap at 3 (spec: max 3 active,
+    no spam). Higher priority = more time-sensitive for the child.
+    """
     out = []
+    if streak >= 1 and slot == "evening":
+        out.append({"id": "n-streak", "type": "streak", "icon": "🔥", "priority": 3,
+                    "text": f"Your {streak}-day streak is at risk! Learn something to keep it alive."})
     if needs_revision:
         c = needs_revision[0]
-        out.append({"id": "n-revise", "type": "revision", "icon": "🧠",
-                    "text": f"Time to revise {c['title']} — it's fading from memory."})
-    if streak >= 1 and slot == "evening":
-        out.append({"id": "n-streak", "type": "streak", "icon": "🔥",
-                    "text": f"Your {streak}-day streak is at risk! Learn something to keep it alive."})
+        out.append({"id": "n-revise", "type": "revision", "icon": "🧠", "priority": 2,
+                    "text": f"You haven't revised {c['title']} — a quick refresh will help!"})
     if concepts_count == 0:
-        out.append({"id": "n-first", "type": "mission", "icon": "🚀",
+        out.append({"id": "n-first", "type": "mission", "icon": "🚀", "priority": 2,
                     "text": "Your first mission is ready — tap Continue to begin!"})
     elif concepts_count >= 3:
-        out.append({"id": "n-unlock", "type": "mission", "icon": "✨",
-                    "text": "New missions unlocked across your worlds. Go explore!"})
-    return out
+        out.append({"id": "n-unlock", "type": "content_unlock", "icon": "✨", "priority": 1,
+                    "text": "New episode unlocked across your worlds. Go explore! 🚀"})
+    out.sort(key=lambda n: n["priority"], reverse=True)
+    return out[:3]   # max 3 active
 
 
 # ---------------------------------------------------------------------------
@@ -283,34 +288,60 @@ def _offline_reply(message: str, ctx: dict) -> str:
     return pre + body
 
 
-def mentor_reply(message: str, ctx: dict) -> dict:
-    """Return {'reply': str, 'source': 'llm'|'offline'}."""
+def mentor_reply(message: str, ctx: dict, mode: str = "fun", history=None) -> dict:
+    """Return {'reply': str, 'source': 'llm'|'offline'}. mode: fun|quick|quiz."""
     key = os.getenv("OPENAI_API_KEY")
     if key:
         try:
-            return {"reply": _llm_reply(message, ctx, key), "source": "llm"}
+            return {"reply": _llm_reply(message, ctx, key, mode, history or []), "source": "llm"}
         except Exception:
             pass  # graceful fallback — never break the kid's flow
-    return {"reply": _offline_reply(message, ctx), "source": "offline"}
+    return {"reply": _offline_reply_mode(message, ctx, mode), "source": "offline"}
 
 
-def _llm_reply(message: str, ctx: dict, key: str) -> str:
+def _offline_reply_mode(message: str, ctx: dict, mode: str) -> str:
+    name = ctx.get("name", "buddy")
+    fl = flavor(ctx.get("interests"))
+    topic = message.replace("Explain", "").replace("explain", "").strip(" ?.") or "this"
+    if mode == "quick":
+        return f"Quick version, {name}: think of {topic} using {fl} — that's the heart of it! ⚡"
+    if mode == "quiz":
+        return (f"Quiz time, {name}! 🧠 Here's one about {topic}: "
+                f"if you explained it using {fl}, what would the FIRST step be? "
+                f"Type your guess and I'll tell you if you're right! 🎯")
+    return _offline_reply(message, ctx)
+
+
+# mode → instruction appended to the LLM system prompt
+_MODE_INSTRUCTION = {
+    "fun": "Explain with a tiny playful story and emojis.",
+    "quick": "Answer in 2-3 short lines. No fluff.",
+    "quiz": "Don't explain — ask ONE fun quiz question about the topic and invite a guess.",
+}
+
+
+def _llm_reply(message: str, ctx: dict, key: str, mode: str = "fun", history=None) -> str:
     from openai import OpenAI  # imported lazily; only if a key is present
 
     client = OpenAI(api_key=key)
+    recent = ctx.get("recent_learning")
     system = (
         f"You are Wolio, a fun AI mentor for a child named {ctx.get('name','friend')}, "
         f"age group {ctx.get('age_group','9-12')}. Talk like an excited friend, NOT a teacher. "
         f"Tone: {ctx.get('tone','fun')}. Language: {ctx.get('language','hinglish')} "
         f"(Hinglish = casual Hindi+English mix). Use the child's interests "
         f"({', '.join(ctx.get('interests') or ['space'])}) for every example. "
-        f"Keep replies under 60 words, warm, with one emoji."
+        + (f"They recently learned: {recent}. " if recent else "")
+        + f"{_MODE_INSTRUCTION.get(mode, _MODE_INSTRUCTION['fun'])} "
+        f"Keep it under 60 words, warm, kid-safe, with one emoji."
     )
+    # include the last few turns for session memory (spec: last 5)
+    msgs = [{"role": "system", "content": system}]
+    for h in (history or [])[-5:]:
+        role = "assistant" if h.get("role") in ("bot", "assistant") else "user"
+        msgs.append({"role": role, "content": str(h.get("text", ""))[:500]})
+    msgs.append({"role": "user", "content": message})
+
     resp = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[{"role": "system", "content": system},
-                  {"role": "user", "content": message}],
-        max_tokens=160,
-        temperature=0.8,
-    )
+        model="gpt-4o-mini", messages=msgs, max_tokens=160, temperature=0.8)
     return resp.choices[0].message.content.strip()

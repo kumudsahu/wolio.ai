@@ -37,6 +37,48 @@ def retention_label(strength: int) -> str:
     return "Weak"
 
 
+def memory_suggestions(concepts: list, top: int = 2) -> list:
+    """Homepage 'Your Memory' shortcut — top-N concepts to resurface.
+
+    urgency_score rises with time since last seen and falling mastery/strength.
+    Each card gets a state: fresh | mid | weak (spec section 7).
+    """
+    out = []
+    for c in concepts:
+        days = c.get("_days_since") or 0
+        strength = c.get("memory_strength", 100)
+        mastery = c.get("mastery", 0)
+        urgency = (100 - strength) + days * 3 + (20 if mastery < 70 else 0)
+        if days < 1:
+            state, urgency = "fresh", urgency * 0.2          # just learned — low urgency
+        elif strength < 60 or days > 7:
+            state = "weak"
+        else:
+            state = "mid"
+        out.append({
+            "concept_id": c["id"], "topic": c["title"], "emoji": c.get("emoji") or "✨",
+            "days": days, "state": state, "mastery": mastery,
+            "memory_strength": strength, "urgency": round(urgency, 1),
+        })
+    out.sort(key=lambda x: x["urgency"], reverse=True)
+    return out[:top]
+
+
+@router.get("/memory-suggestions/{user_id}")
+def get_memory_suggestions(user_id: int):
+    conn = get_conn()
+    try:
+        _decay_memory(conn, user_id)
+        conn.commit()
+        rows = conn.execute(
+            "SELECT *, CAST(julianday('now')-julianday(last_revised) AS INTEGER) _days_since "
+            "FROM concepts WHERE user_id=? ORDER BY last_revised ASC", (user_id,)
+        ).fetchall()
+    finally:
+        conn.close()
+    return {"suggestions": memory_suggestions([dict(r) for r in rows])}
+
+
 def _card(c: dict) -> dict:
     """Shape a concept row into a Memory Card."""
     return {
