@@ -723,12 +723,24 @@ window.Home = (function () {
           ${D.tones.map((t) => `<button class="choice ${me.tone === t.id ? "selected" : ""}" data-id="${t.id}"><span class="emoji">${t.emoji}</span>${t.label}</button>`).join("")}
         </div>
       </div>
+      <div class="section fadein delay-3"><div class="section-h"><h3>Theme</h3></div>
+        <div class="choices grid-3" id="setTheme">
+          ${Theme.list().map((t) => `<button class="choice ${Theme.current() === t.id ? "selected" : ""}" data-theme-id="${t.id}"><span class="emoji">${t.emoji}</span>${t.name}</button>`).join("")}
+        </div>
+      </div>
       <div class="section fadein delay-3">
         <div class="quest"><div class="qi">🔊</div><div class="qt"><b>Voice replies</b><span>Hear your mentor talk</span></div>
           <button class="pill" id="setVoice">${me.voice ? "On" : "Off"}</button></div>
       </div>
       ${tabbar("profile")}
     `);
+    document.querySelectorAll("#setTheme .choice").forEach((b) => b.onclick = async () => {
+      const id = Theme.apply(b.dataset.themeId);            // live, instant
+      document.querySelectorAll("#setTheme .choice").forEach((x) => x.classList.remove("selected"));
+      b.classList.add("selected");
+      try { await API.updatePrefs(App.userId(), { theme: id }); } catch (_) {}
+      UI.toast("Theme applied ✨");
+    });
     document.querySelectorAll("#setLang .choice").forEach((b) => b.onclick = () => savePref("language", b.dataset.id, "setLang", b));
     document.querySelectorAll("#setTone .choice").forEach((b) => b.onclick = () => savePref("tone", b.dataset.id, "setTone", b));
     document.getElementById("setVoice").onclick = async (e) => {

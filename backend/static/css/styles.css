@@ -1,9 +1,10 @@
 /* ============================================================
    wolio.ai — premium "game + Netflix" design system
    ============================================================ */
-:root {
+:root, body[data-theme="cosmic"] {
   --bg:        #0b0720;
   --bg-soft:   #15103a;
+  --bg-glow:   #1b1147;
   --card:      rgba(255, 255, 255, 0.06);
   --card-edge: rgba(255, 255, 255, 0.12);
   --ink:       #f6f4ff;
@@ -16,8 +17,45 @@
   --green:     #34e0a1;
   --radius:    22px;
   --shadow:    0 18px 50px rgba(8, 4, 28, 0.55);
-  --grad-hero: linear-gradient(135deg, #7c5cff 0%, #ff6ba6 100%);
-  --grad-cta:  linear-gradient(135deg, #2ee6d6 0%, #7c5cff 100%);
+  --grad-hero: linear-gradient(135deg, var(--violet) 0%, var(--pink) 100%);
+  --grad-cta:  linear-gradient(135deg, var(--cyan) 0%, var(--violet) 100%);
+}
+
+/* ---------- swappable themes (kids pick their universe) ---------- */
+body[data-theme="comic"] {
+  --bg: #0e1530; --bg-soft: #1a2450; --bg-glow: #243a86;
+  --violet: #2f6bff; --violet-2: #6f97ff; --cyan: #ffd23b; --pink: #ff3b3b;
+  --gold: #ffd23b; --green: #2bd673;
+  --grad-hero: linear-gradient(135deg, #ff3b3b 0%, #ffd23b 100%);
+  --grad-cta:  linear-gradient(135deg, #2f6bff 0%, #ff3b3b 100%);
+}
+body[data-theme="candy"] {
+  --bg: #2a1230; --bg-soft: #3d1a45; --bg-glow: #5a2a6e;
+  --violet: #ff6bd6; --violet-2: #ffa6e6; --cyan: #6be3ff; --pink: #ff8ac0;
+  --gold: #ffd86b; --green: #6bf0c0;
+  --grad-hero: linear-gradient(135deg, #ff6bd6 0%, #6be3ff 100%);
+  --grad-cta:  linear-gradient(135deg, #6be3ff 0%, #ff6bd6 100%);
+}
+body[data-theme="ocean"] {
+  --bg: #04243a; --bg-soft: #073a5c; --bg-glow: #0a5a8a;
+  --violet: #1ca7ec; --violet-2: #6fd3ff; --cyan: #2ee6d6; --pink: #ff8a5c;
+  --gold: #ffd23b; --green: #34e0a1;
+  --grad-hero: linear-gradient(135deg, #1ca7ec 0%, #2ee6d6 100%);
+  --grad-cta:  linear-gradient(135deg, #2ee6d6 0%, #1ca7ec 100%);
+}
+body[data-theme="jungle"] {
+  --bg: #0d2616; --bg-soft: #143a22; --bg-glow: #1f5a33;
+  --violet: #2bd673; --violet-2: #7af0a8; --cyan: #ffce4f; --pink: #ff8a5c;
+  --gold: #ffce4f; --green: #2bd673;
+  --grad-hero: linear-gradient(135deg, #2bd673 0%, #ffce4f 100%);
+  --grad-cta:  linear-gradient(135deg, #ffce4f 0%, #2bd673 100%);
+}
+body[data-theme="neon"] {
+  --bg: #07060f; --bg-soft: #14111f; --bg-glow: #2a1a4a;
+  --violet: #b14bff; --violet-2: #d98aff; --cyan: #2ee6ff; --pink: #ff2bd0;
+  --gold: #ccff3b; --green: #2bffb0;
+  --grad-hero: linear-gradient(135deg, #b14bff 0%, #2ee6ff 100%);
+  --grad-cta:  linear-gradient(135deg, #2ee6ff 0%, #ff2bd0 100%);
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -32,8 +70,8 @@ h1, h2, h3, .display { font-family: "Fredoka", "Nunito", sans-serif; font-weight
 button { font-family: inherit; cursor: pointer; border: none; }
 
 /* ---------- cosmic background ---------- */
-.cosmos { position: fixed; inset: 0; z-index: 0; overflow: hidden;
-  background: radial-gradient(120% 100% at 50% -10%, #1b1147 0%, #0b0720 60%); }
+.cosmos { position: fixed; inset: 0; z-index: 0; overflow: hidden; transition: background .5s ease;
+  background: radial-gradient(120% 100% at 50% -10%, var(--bg-glow) 0%, var(--bg) 60%); }
 .stars { position: absolute; inset: 0;
   background-image:
     radial-gradient(1.5px 1.5px at 20% 30%, #fff, transparent),
@@ -46,10 +84,15 @@ button { font-family: inherit; cursor: pointer; border: none; }
 @keyframes twinkle { from { opacity: 0.25; } to { opacity: 0.6; } }
 .orb { position: absolute; border-radius: 50%; filter: blur(60px); opacity: 0.5;
   animation: float 16s ease-in-out infinite; }
-.orb--violet { width: 360px; height: 360px; background: #7c5cff; top: -90px; left: -80px; }
-.orb--cyan   { width: 300px; height: 300px; background: #2ee6d6; bottom: -100px; right: -60px; animation-delay: -5s; }
-.orb--pink   { width: 240px; height: 240px; background: #ff6ba6; top: 40%; right: -90px; animation-delay: -9s; }
+.orb--violet { width: 360px; height: 360px; background: var(--violet); top: -90px; left: -80px; }
+.orb--cyan   { width: 300px; height: 300px; background: var(--cyan); bottom: -100px; right: -60px; animation-delay: -5s; }
+.orb--pink   { width: 240px; height: 240px; background: var(--pink); top: 40%; right: -90px; animation-delay: -9s; }
 @keyframes float { 0%,100% { transform: translateY(0) translateX(0); } 50% { transform: translateY(-30px) translateX(20px); } }
+
+/* Comic theme — halftone dot flourish over the starfield */
+body[data-theme="comic"] .stars {
+  background-image: radial-gradient(rgba(255,255,255,.12) 1.6px, transparent 1.8px);
+  background-size: 20px 20px; opacity: .5; animation: none; }
 
 /* ---------- phone stage ---------- */
 .stage { position: relative; z-index: 1; height: 100dvh; display: grid; place-items: center; padding: 16px; }

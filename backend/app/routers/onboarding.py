@@ -56,6 +56,7 @@ class PrefsIn(BaseModel):
     tone: Optional[str] = None
     voice: Optional[bool] = None
     avatar: Optional[Dict[str, Any]] = None
+    theme: Optional[str] = None
 
 
 @router.patch("/me/{user_id}")
@@ -65,6 +66,7 @@ def update_prefs(user_id: int, data: PrefsIn):
     if data.tone is not None:     fields.append("tone=?");     params.append(data.tone)
     if data.voice is not None:    fields.append("voice=?");    params.append(int(data.voice))
     if data.avatar is not None:   fields.append("avatar=?");   params.append(jdump(data.avatar))
+    if data.theme is not None:    fields.append("theme=?");    params.append(data.theme)
     if not fields:
         return {"updated": False}
     params.append(user_id)

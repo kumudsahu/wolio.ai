@@ -11,7 +11,8 @@ window.App = (function () {
     const saved = localStorage.getItem(KEY);
     if (saved) {
       try {
-        await API.me(saved);          // verify the user still exists
+        const m = await API.me(saved);   // verify the user still exists
+        if (m && m.theme) Theme.apply(m.theme);   // restore their chosen theme
         uid = Number(saved);
         return Home.enter({});
       } catch (_) { clear(); }
