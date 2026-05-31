@@ -1,6 +1,31 @@
 """Smoke + behavior tests across the wolio.ai API (Step 7.13)."""
 
 
+def test_auth_send_and_verify(client):
+    r = client.post("/api/auth/send-code", json={"email": "p@x.com"})
+    assert r.status_code == 200
+    code = r.json()["demo_code"]
+    assert client.post("/api/auth/verify", json={"email": "p@x.com", "code": "000000"}).status_code == 401
+    ok = client.post("/api/auth/verify", json={"email": "p@x.com", "code": code})
+    assert ok.status_code == 200
+    assert ok.json()["user_id"] is None          # new email, no account yet
+
+
+def test_auth_rejects_bad_email(client):
+    assert client.post("/api/auth/send-code", json={"email": "nope"}).status_code == 400
+
+
+def test_auth_returning_user_logs_in(client):
+    email = "returning@x.com"
+    code = client.post("/api/auth/send-code", json={"email": email}).json()["demo_code"]
+    client.post("/api/auth/verify", json={"email": email, "code": code})
+    # create an onboarded child with that email
+    client.post("/api/onboarding", json={"name": "Kid", "age_group": "9-12", "email": email})
+    code2 = client.post("/api/auth/send-code", json={"email": email}).json()["demo_code"]
+    r = client.post("/api/auth/verify", json={"email": email, "code": code2})
+    assert r.json()["user_id"] is not None        # now logs straight in
+
+
 def test_health(client):
     r = client.get("/health")
     assert r.status_code == 200

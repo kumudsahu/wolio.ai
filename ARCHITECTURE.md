@@ -32,8 +32,12 @@ maps 1:1 to a future microservice. Extract to separate services when load demand
 - Single FastAPI entry point; all feature APIs under `/api/*`.
 - `platform_mw` middleware adds **`X-Process-Time-ms`** to every response and a
   per-IP **rate limit** (240 req/60s on `/api/*` → HTTP 429).
-- **Prod TODO:** JWT auth (currently client holds `user_id` in localStorage;
-  parent zone is PIN-gated), per-route quotas, an edge gateway (Kong/APIGW).
+- **Auth:** app entry uses **email + 6-digit code** sign-in (`/api/auth/send-code`
+  + `/api/auth/verify`); returning emails log straight in. Codes are in-memory +
+  returned for the demo. Parent zone is separately PIN-gated.
+- **Prod TODO:** email the code via a mail service (don't return it), hash +
+  TTL the codes, JWT/refresh tokens (client currently holds `user_id` in
+  localStorage), per-route quotas, an edge gateway (Kong/APIGW).
 
 ## 7.4 AI Layer — **implemented (rule-based) + LLM-ready**
 - `brain.recommend_action` (homepage hero / next mission / revision) from

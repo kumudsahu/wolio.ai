@@ -109,6 +109,7 @@ CREATE TABLE IF NOT EXISTS parents (
 # Columns added after the first release. SQLite's CREATE TABLE IF NOT EXISTS
 # won't touch an existing table, so we add them defensively at startup.
 _USER_MIGRATIONS = {
+    "email":          "TEXT",
     "last_world":     "TEXT",
     "last_mission":   "TEXT",
     "last_progress":  "INTEGER DEFAULT 0",

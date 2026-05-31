@@ -215,7 +215,7 @@ window.Onboarding = (function () {
     const tick = setInterval(() => { k = (k + 1) % steps.length; bs.textContent = steps[k]; }, 700);
 
     try {
-      const res = await API.onboarding(draft);
+      const res = await API.onboarding({ ...draft, email: App.getEmail && App.getEmail() });
       App.setUser(res.user_id);
       setTimeout(() => { clearInterval(tick); screenFirstMission(res.journey); }, 1600);
     } catch (e) {

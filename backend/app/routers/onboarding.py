@@ -11,6 +11,7 @@ router = APIRouter(prefix="/api", tags=["onboarding"])
 class OnboardingIn(BaseModel):
     name: str
     age_group: str
+    email: Optional[str] = None
     grade: Optional[str] = None
     language: str = "hinglish"
     tone: str = "fun"
@@ -31,11 +32,11 @@ def complete_onboarding(data: OnboardingIn):
         cur = conn.execute(
             """INSERT INTO users
                (name, age_group, grade, language, tone, voice, avatar, interests,
-                learning_style, difficulty_tier, onboarded, streak)
-               VALUES (?,?,?,?,?,?,?,?,?,?,1,1)""",
+                learning_style, difficulty_tier, email, onboarded, streak)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,1,1)""",
             (data.name.strip(), data.age_group, data.grade, data.language, data.tone,
              int(data.voice), jdump(data.avatar or {}), jdump(data.interests),
-             data.learning_style, tier),
+             data.learning_style, tier, (data.email or "").strip().lower() or None),
         )
         user_id = cur.lastrowid
         if data.behavior:

@@ -604,6 +604,14 @@ input::placeholder { color: var(--ink-soft); opacity: .6; }
 .confetti i { position: absolute; top: -24px; width: 9px; height: 14px; border-radius: 2px; opacity: .95; animation: confetti-fall linear forwards; }
 @keyframes confetti-fall { 0% { transform: translateY(0) rotate(0); opacity: 1; } 100% { transform: translateY(900px) rotate(900deg); opacity: 0; } }
 
+/* ============== EMAIL AUTH ============== */
+.auth-head { text-align: center; margin-top: 18px; margin-bottom: 18px; }
+.auth-head .mascot { margin: 0 auto 14px; }
+.auth-err { color: var(--pink); font-size: 13px; font-weight: 700; text-align: center; min-height: 18px; margin-top: 10px; }
+.auth-demo { margin-top: 12px; text-align: center; font-size: 13px; font-weight: 700; color: var(--ink-soft);
+  background: var(--card); border: 1px dashed var(--card-edge); border-radius: 12px; padding: 10px; }
+.auth-demo b { color: var(--cyan); letter-spacing: 2px; }
+
 /* ============== MEMORY SYSTEM (Step 4) ============== */
 .brainmeter { display: flex; align-items: center; gap: 16px; background: var(--card); border: 1px solid var(--card-edge); border-radius: 20px; padding: 16px; }
 .bm-ring { --pct: 0; width: 78px; height: 78px; border-radius: 50%; flex: 0 0 auto; display: grid; place-items: center;

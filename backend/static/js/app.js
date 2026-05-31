@@ -1,11 +1,14 @@
 /* App bootstrap + lightweight session. */
 window.App = (function () {
   const KEY = "wolio_user_id";
+  const EMAIL_KEY = "wolio_email";
   let uid = null;
 
   function userId() { return uid; }
   function setUser(id) { uid = id; localStorage.setItem(KEY, String(id)); }
-  function clear() { uid = null; localStorage.removeItem(KEY); }
+  function setEmail(e) { localStorage.setItem(EMAIL_KEY, e || ""); }
+  function getEmail() { return localStorage.getItem(EMAIL_KEY) || ""; }
+  function clear() { uid = null; localStorage.removeItem(KEY); localStorage.removeItem(EMAIL_KEY); }
 
   async function boot() {
     const saved = localStorage.getItem(KEY);
@@ -35,12 +38,12 @@ window.App = (function () {
         <button class="btn btn--ghost btn--block" id="reset" style="display:${localStorage.getItem(KEY) ? "block" : "none"}">Reset demo</button>
       </div>
     `);
-    document.getElementById("start").onclick = () => Onboarding.start();
+    document.getElementById("start").onclick = () => Auth.start();
     const reset = document.getElementById("reset");
     if (reset) reset.onclick = () => { clear(); UI.toast("Demo reset"); };
   }
 
-  return { boot, welcome, userId, setUser, setUserId: setUser, clear };
+  return { boot, welcome, userId, setUser, setUserId: setUser, setEmail, getEmail, clear };
 })();
 
 document.addEventListener("DOMContentLoaded", () => App.boot());

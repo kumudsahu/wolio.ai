@@ -23,6 +23,8 @@ window.API = {
     if (!r.ok) throw new Error(r.statusText);
     return r.json();
   },
+  authSendCode: (email) => API._post("/api/auth/send-code", { email }),
+  authVerify: (email, code) => API._post("/api/auth/verify", { email, code }),
   onboarding: (payload) => API._post("/api/onboarding", payload),
   me: (id) => API._get(`/api/me/${id}`),
   updatePrefs: (id, prefs) => API._patch(`/api/me/${id}`, prefs),
