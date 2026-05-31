@@ -600,6 +600,7 @@ window.Home = (function () {
         <button class="quest" id="pShop" style="text-align:left"><div class="qi">🛍️</div><div class="qt"><b>Avatar Shop</b><span>Spend coins on new looks</span></div><div class="qx">🪙 ${hp.coins}</div></button>
         <button class="quest" id="pAch" style="text-align:left"><div class="qi">🏅</div><div class="qt"><b>Achievements</b><span>Your unlocked badges</span></div><div class="qx">→</div></button>
         <button class="quest" id="pEdit" style="text-align:left"><div class="qi">🎭</div><div class="qt"><b>Edit avatar</b><span>Change your hero look</span></div><div class="qx">→</div></button>
+        <button class="quest" id="pTheme" style="text-align:left"><div class="qi">🎨</div><div class="qt"><b>Theme</b><span>Cosmic, Comic, Candy & more</span></div><div class="qx">${Theme.list().find((t) => t.id === Theme.current())?.emoji || "🌌"}</div></button>
         <button class="quest" id="pSettings" style="text-align:left"><div class="qi">⚙️</div><div class="qt"><b>Settings</b><span>Language, mentor vibe, voice</span></div><div class="qx">→</div></button>
         <button class="quest" id="pParent" style="text-align:left"><div class="qi">👨‍👩‍👧</div><div class="qt"><b>Parent Zone</b><span>Reports & growth story (PIN)</span></div><div class="qx">→</div></button>
         <button class="quest" id="pReset" style="text-align:left"><div class="qi">🔄</div><div class="qt"><b>Reset demo</b><span>Start over from onboarding</span></div><div class="qx">→</div></button>
@@ -609,6 +610,7 @@ window.Home = (function () {
     document.getElementById("pShop").onclick = renderShop;
     document.getElementById("pAch").onclick = renderAchievements;
     document.getElementById("pEdit").onclick = openAvatarSheet;
+    document.getElementById("pTheme").onclick = openThemeSheet;
     document.getElementById("pSettings").onclick = renderSettings;
     document.getElementById("pParent").onclick = parentGate;
     document.getElementById("pReset").onclick = () => { App.clear(); App.welcome(); };
@@ -705,6 +707,30 @@ window.Home = (function () {
     });
   }
 
+  /* ================= THEME PICKER ================= */
+  function openThemeSheet() {
+    const sheet = UI.h(`
+      <div class="sheet"><div class="scrim"></div>
+        <div class="panel">
+          <div class="phead"><b>🎨 Choose your theme</b><button class="close">✕</button></div>
+          <p class="muted" style="padding:0 16px;font-size:13px;margin:0">Tap to preview instantly — it changes the whole look.</p>
+          <div class="choices grid-3" id="themeGrid" style="padding:16px">
+            ${Theme.list().map((t) => `<button class="choice ${Theme.current() === t.id ? "selected" : ""}" data-theme-id="${t.id}"><span class="emoji">${t.emoji}</span>${t.name}</button>`).join("")}
+          </div>
+        </div></div>`);
+    document.querySelector(".stage").appendChild(sheet);
+    const close = () => sheet.remove();
+    sheet.querySelector(".scrim").onclick = close;
+    sheet.querySelector(".close").onclick = close;
+    sheet.querySelectorAll("[data-theme-id]").forEach((b) => b.onclick = async () => {
+      const id = Theme.apply(b.dataset.themeId);                       // live preview
+      sheet.querySelectorAll("[data-theme-id]").forEach((x) => x.classList.remove("selected"));
+      b.classList.add("selected");
+      try { await API.updatePrefs(App.userId(), { theme: id }); } catch (_) {}
+      UI.toast("Theme applied ✨");
+    });
+  }
+
   /* ================= SETTINGS ================= */
   function renderSettings() {
     tab = "profile";
@@ -723,24 +749,12 @@ window.Home = (function () {
           ${D.tones.map((t) => `<button class="choice ${me.tone === t.id ? "selected" : ""}" data-id="${t.id}"><span class="emoji">${t.emoji}</span>${t.label}</button>`).join("")}
         </div>
       </div>
-      <div class="section fadein delay-3"><div class="section-h"><h3>Theme</h3></div>
-        <div class="choices grid-3" id="setTheme">
-          ${Theme.list().map((t) => `<button class="choice ${Theme.current() === t.id ? "selected" : ""}" data-theme-id="${t.id}"><span class="emoji">${t.emoji}</span>${t.name}</button>`).join("")}
-        </div>
-      </div>
       <div class="section fadein delay-3">
         <div class="quest"><div class="qi">🔊</div><div class="qt"><b>Voice replies</b><span>Hear your mentor talk</span></div>
           <button class="pill" id="setVoice">${me.voice ? "On" : "Off"}</button></div>
       </div>
       ${tabbar("profile")}
     `);
-    document.querySelectorAll("#setTheme .choice").forEach((b) => b.onclick = async () => {
-      const id = Theme.apply(b.dataset.themeId);            // live, instant
-      document.querySelectorAll("#setTheme .choice").forEach((x) => x.classList.remove("selected"));
-      b.classList.add("selected");
-      try { await API.updatePrefs(App.userId(), { theme: id }); } catch (_) {}
-      UI.toast("Theme applied ✨");
-    });
     document.querySelectorAll("#setLang .choice").forEach((b) => b.onclick = () => savePref("language", b.dataset.id, "setLang", b));
     document.querySelectorAll("#setTone .choice").forEach((b) => b.onclick = () => savePref("tone", b.dataset.id, "setTone", b));
     document.getElementById("setVoice").onclick = async (e) => {
