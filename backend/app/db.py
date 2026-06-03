@@ -122,7 +122,7 @@ _USER_MIGRATIONS = {
     "goal_subject":   "TEXT",      # subject the parent wants to focus on
     "screen_limit_min": "INTEGER DEFAULT 60",
     "restricted_topics": "TEXT",   # JSON list of topics the parent turned off
-    "theme":          "TEXT DEFAULT 'cosmic'",
+    "theme":          "TEXT DEFAULT 'comic'",
 }
 
 _CONCEPT_MIGRATIONS = {

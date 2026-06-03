@@ -10,10 +10,11 @@ window.Theme = (function () {
     { id: "neon",   name: "Neon",   emoji: "🤖" },
   ];
 
-  function current() { return localStorage.getItem(KEY) || "cosmic"; }
+  const DEFAULT = "comic";   // the app opens in the Comic look (kids can change it)
+  function current() { return localStorage.getItem(KEY) || DEFAULT; }
 
   function apply(id, persist = true) {
-    if (!THEMES.some((t) => t.id === id)) id = "cosmic";
+    if (!THEMES.some((t) => t.id === id)) id = DEFAULT;
     document.body.setAttribute("data-theme", id);
     if (persist) localStorage.setItem(KEY, id);
     return id;

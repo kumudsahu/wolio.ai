@@ -32,11 +32,11 @@ def complete_onboarding(data: OnboardingIn):
         cur = conn.execute(
             """INSERT INTO users
                (name, age_group, grade, language, tone, voice, avatar, interests,
-                learning_style, difficulty_tier, email, onboarded, streak)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,1,1)""",
+                learning_style, difficulty_tier, email, theme, onboarded, streak)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,1,1)""",
             (data.name.strip(), data.age_group, data.grade, data.language, data.tone,
              int(data.voice), jdump(data.avatar or {}), jdump(data.interests),
-             data.learning_style, tier, (data.email or "").strip().lower() or None),
+             data.learning_style, tier, (data.email or "").strip().lower() or None, "comic"),
         )
         user_id = cur.lastrowid
         if data.behavior:
