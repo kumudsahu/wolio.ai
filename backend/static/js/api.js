@@ -23,6 +23,9 @@ window.API = {
     if (!r.ok) throw new Error(r.statusText);
     return r.json();
   },
+  characters: () => API._get("/api/characters"),
+  comicsList: () => API._get("/api/comics"),
+  comic: (id) => API._get(`/api/comics/${id}`),
   authSendCode: (email) => API._post("/api/auth/send-code", { email }),
   authVerify: (email, code) => API._post("/api/auth/verify", { email, code }),
   onboarding: (payload) => API._post("/api/onboarding", payload),

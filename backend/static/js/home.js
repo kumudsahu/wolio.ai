@@ -2,6 +2,7 @@
    The home screen is driven by a single AI-built config from /api/homepage. */
 window.Home = (function () {
   let me = null, worlds = [], tl = null, hp = null, tab = "home";
+  let crew = [], comics = [];          // Curio-Verse cast + comic episodes
   let dismissed = new Set();           // notification ids the user has seen
 
   async function enter(opts = {}) {
@@ -20,6 +21,10 @@ window.Home = (function () {
     const id = App.userId();
     const [m, w, t, h] = await Promise.all([API.me(id), API.worlds(id), API.timeline(id), API.homepage(id)]);
     me = m; worlds = w.worlds; tl = t; hp = h;
+    if (!crew.length) {                // static cast/comics — fetch once
+      try { const [c, k] = await Promise.all([API.characters(), API.comicsList()]); crew = c.characters; comics = k.comics; }
+      catch (_) {}
+    }
   }
 
   const worldById = (id) => worlds.find((x) => x.id === id);
@@ -82,6 +87,27 @@ window.Home = (function () {
           </div>`).join("")}</div>
       </div>
 
+      <!-- Meet the crew (original characters / IP) -->
+      ${crew.length ? `<div class="section fadein delay-2">
+        <div class="section-h"><h3>✨ Meet your crew</h3><a id="seecrew">See all</a></div>
+        <div class="rail">${crew.map((c) => `
+          <button class="crewchip" data-crew="${c.id}">
+            <span class="crew-ava" style="background:linear-gradient(145deg, ${c.color}, rgba(8,6,22,.3))">${c.emoji}</span>
+            <b>${UI.esc(c.name.split(" ")[0])}</b>
+          </button>`).join("")}</div>
+      </div>` : ""}
+
+      <!-- Story comics -->
+      ${comics.length ? `<div class="section fadein delay-2">
+        <div class="section-h"><h3>📖 Story Comics</h3><span class="muted" style="font-size:12px">tap to read</span></div>
+        <div class="rail">${comics.map((c) => `
+          <button class="comiccard" data-comic="${c.id}">
+            <span class="comic-cover">${c.cover}</span>
+            <b>${UI.esc(c.title)}</b>
+            <small>${UI.esc(c.blurb)}</small>
+          </button>`).join("")}</div>
+      </div>` : ""}
+
       <!-- 2.6 Daily quests -->
       <div class="section fadein delay-3">
         <div class="section-h"><h3>🔥 Daily Quests</h3><span class="pill">🔥 ${hp.stats.streak} day streak</span></div>
@@ -142,6 +168,9 @@ window.Home = (function () {
     document.getElementById("levelCard").onclick = openAnalytics;
     document.querySelectorAll("[data-world]").forEach((el) => el.onclick = () => openWorld(el.dataset.world));
     document.querySelectorAll("[data-ql]").forEach((el) => el.onclick = () => openQuickLearn(+el.dataset.ql));
+    document.querySelectorAll("[data-crew]").forEach((el) => el.onclick = () => openCharacter(el.dataset.crew));
+    document.querySelectorAll("[data-comic]").forEach((el) => el.onclick = () => openComic(el.dataset.comic));
+    const sc = document.getElementById("seecrew"); if (sc) sc.onclick = renderCrew;
     wireTabs();
 
     // 5.10 reward feedback: celebrate freshly-earned achievements
@@ -252,6 +281,85 @@ window.Home = (function () {
   }
   const cleanTitle = (s) => s.replace(/\s*[\p{Emoji_Presentation}\p{Extended_Pictographic}]+\s*$/u, "").trim();
   const emojiOf = (s) => { const m = s.match(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu); return m ? m[m.length - 1] : "⚡"; };
+
+  /* ================= CREW (original characters) ================= */
+  function renderCrew() {
+    tab = "home";
+    UI.render(`
+      <div class="home-head fadein"><button class="pill" onclick="Home._tab('home')">←</button>
+        <div class="who"><h2>✨ The Curio-Verse Crew</h2><p>Your guides through every world</p></div></div>
+      <div class="crew-grid fadein delay-1">
+        ${crew.map((c) => `
+          <button class="crew-card" data-crew="${c.id}" style="border-color:${c.color}66">
+            <span class="crew-ava lg" style="background:linear-gradient(145deg, ${c.color}, rgba(8,6,22,.3))">${c.emoji}</span>
+            <b>${UI.esc(c.name)}</b><small>${UI.esc(c.role)}</small>
+          </button>`).join("")}
+      </div>
+      ${tabbar("home")}
+    `);
+    document.querySelectorAll("[data-crew]").forEach((el) => el.onclick = () => openCharacter(el.dataset.crew));
+    wireTabs();
+  }
+
+  function openCharacter(id) {
+    const c = crew.find((x) => x.id === id);
+    if (!c) return;
+    const sheet = UI.h(`
+      <div class="sheet"><div class="scrim"></div><div class="panel">
+        <div class="phead"><b>${c.emoji} ${UI.esc(c.name)}</b><button class="close">✕</button></div>
+        <div style="padding:18px;text-align:center">
+          <div class="mascot" style="background:linear-gradient(145deg, ${c.color}, rgba(8,6,22,.3))">${c.emoji}</div>
+          <p class="muted" style="margin:2px 0 6px;font-weight:800">${UI.esc(c.role)}${c.villain ? " 🌫️" : ""}</p>
+          <div class="bubble center" style="margin:0 auto 12px">“${UI.esc(c.tagline)}”</div>
+          <p style="font-size:14px;line-height:1.5;text-align:left">${UI.esc(c.bio)}</p>
+          <div class="row" style="justify-content:center;gap:6px;flex-wrap:wrap;margin-top:12px">
+            ${(c.traits || []).map((t) => `<span class="pill">${UI.esc(t)}</span>`).join("")}
+          </div>
+        </div>
+      </div></div>`);
+    document.querySelector(".stage").appendChild(sheet);
+    const close = () => sheet.remove();
+    sheet.querySelector(".scrim").onclick = close;
+    sheet.querySelector(".close").onclick = close;
+  }
+
+  /* ================= COMIC READER ================= */
+  async function openComic(id, panelIdx) {
+    let data;
+    if (typeof panelIdx === "number" && openComic._cache && openComic._cache.id === id) {
+      data = openComic._cache;
+    } else {
+      UI.render(`<div class="builder"><div class="ring"></div><p class="build-step">Opening comic…</p></div>`);
+      try { data = await API.comic(id); } catch (e) { UI.toast("Couldn't open comic"); return renderHome(); }
+      openComic._cache = data; panelIdx = 0;
+    }
+    const i = panelIdx || 0;
+    const p = data.panels[i];
+    const last = i >= data.panels.length - 1;
+    UI.render(`
+      <div class="mhead">
+        <button class="icon-btn" onclick="Home.renderHome()">✕</button>
+        <div class="mseg">${data.panels.map((_, k) => `<i class="${k < i ? "done" : k === i ? "active" : ""}"></i>`).join("")}</div>
+        <div class="mscene">${data.cover}</div>
+      </div>
+      <div class="comic-scene fadein" style="--c:${p.speaker_color || "var(--violet)"}">
+        <div class="comic-emoji">${p.scene}</div>
+      </div>
+      <div class="comic-bubble fadein ${p.speaker ? "" : "narration"}">
+        ${p.speaker_name ? `<div class="cb-who"><span style="color:${p.speaker_color}">${p.speaker_emoji} ${UI.esc(p.speaker_name)}</span></div>` : ""}
+        <p>${UI.esc(p.text)}</p>
+      </div>
+      <div class="cta-bar stack">
+        ${last ? `<div class="bubble center" style="margin-bottom:6px">📌 ${UI.esc(data.moral || "")}</div>` : ""}
+        <div class="row">
+          ${i > 0 ? `<button class="btn btn--ghost" style="flex:1" id="cprev">← Back</button>` : ""}
+          <button class="btn" style="flex:2" id="cnext">${last ? "Finish 🎉" : "Next →"}</button>
+        </div>
+      </div>
+    `);
+    document.getElementById("cnext").onclick = () => last ? renderHome() : openComic(id, i + 1);
+    const pv = document.getElementById("cprev"); if (pv) pv.onclick = () => openComic(id, i - 1);
+  }
 
   /* ================= WORLDS ================= */
   function renderWorlds() {
