@@ -1,0 +1,26 @@
+<svg viewBox="0 0 240 240" xmlns="http://www.w3.org/2000/svg">
+  <g stroke="#14110a" stroke-width="6" stroke-linejoin="round">
+    <!-- deerstalker cap -->
+    <path d="M70 70 q50 -34 100 0 q6 6 0 12 q-50 -22 -100 0 q-6 -6 0 -12 Z" fill="#8a6d4a"/>
+    <ellipse cx="120" cy="64" rx="26" ry="16" fill="#a07f55"/>
+    <!-- ear tufts -->
+    <path d="M78 86 l-8 -22 l24 12 Z" fill="#7a5a36"/>
+    <path d="M162 86 l8 -22 l-24 12 Z" fill="#7a5a36"/>
+    <!-- body -->
+    <path d="M120 80 C166 80 184 120 180 152 C176 188 150 204 120 204 C90 204 64 188 60 152 C56 120 74 80 120 80 Z" fill="#9a6f44"/>
+    <!-- belly -->
+    <ellipse cx="120" cy="150" rx="40" ry="48" fill="#e7cfa6"/>
+    <!-- eye discs -->
+    <circle cx="98" cy="120" r="26" fill="#fff"/>
+    <circle cx="142" cy="120" r="26" fill="#fff"/>
+    <circle cx="98" cy="122" r="12" fill="#14110a" stroke-width="0"/>
+    <circle cx="142" cy="122" r="12" fill="#14110a" stroke-width="0"/>
+    <circle cx="102" cy="118" r="4" fill="#fff" stroke-width="0"/>
+    <circle cx="146" cy="118" r="4" fill="#fff" stroke-width="0"/>
+    <!-- beak -->
+    <path d="M120 138 l-12 16 l12 8 l12 -8 Z" fill="#ffb800"/>
+    <!-- wings -->
+    <path d="M64 150 q-16 26 6 44 q10 -22 14 -40 Z" fill="#7a5a36"/>
+    <path d="M176 150 q16 26 -6 44 q-10 -22 -14 -40 Z" fill="#7a5a36"/>
+  </g>
+</svg>

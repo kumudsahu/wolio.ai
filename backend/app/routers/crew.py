@@ -6,9 +6,13 @@ from ..characters import CHARACTERS, COMICS, character, comic
 router = APIRouter(prefix="/api", tags=["crew"])
 
 
+def _img(cid):
+    return f"/static/img/{cid}.svg"
+
+
 @router.get("/characters")
 def list_characters():
-    return {"characters": CHARACTERS}
+    return {"characters": [{**c, "image": _img(c["id"])} for c in CHARACTERS]}
 
 
 @router.get("/characters/{cid}")
@@ -16,7 +20,7 @@ def get_character(cid: str):
     c = character(cid)
     if not c:
         raise HTTPException(404, "Character not found")
-    return c
+    return {**c, "image": _img(cid)}
 
 
 @router.get("/comics")
@@ -37,5 +41,6 @@ def get_comic(cid: str):
         panels.append({**p,
                        "speaker_name": ch["name"] if ch else None,
                        "speaker_emoji": ch["emoji"] if ch else None,
-                       "speaker_color": ch["color"] if ch else None})
+                       "speaker_color": ch["color"] if ch else None,
+                       "speaker_image": _img(p["speaker"]) if ch else None})
     return {**c, "panels": panels}

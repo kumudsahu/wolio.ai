@@ -1,0 +1,26 @@
+<svg viewBox="0 0 240 240" xmlns="http://www.w3.org/2000/svg">
+  <g stroke="#14110a" stroke-width="6" stroke-linejoin="round">
+    <!-- hair bun -->
+    <circle cx="120" cy="52" r="22" fill="#d9d2e0"/>
+    <!-- hair -->
+    <path d="M58 120 C54 70 92 56 120 56 C148 56 186 70 182 120 q-12 -22 -62 -22 q-50 0 -62 22 Z" fill="#d9d2e0"/>
+    <!-- face -->
+    <path d="M70 108 C70 80 96 70 120 70 C144 70 170 80 170 108 C170 150 148 178 120 178 C92 178 70 150 70 108 Z" fill="#f0c19a"/>
+    <!-- goggles -->
+    <circle cx="100" cy="116" r="20" fill="#cfeefc"/>
+    <circle cx="140" cy="116" r="20" fill="#cfeefc"/>
+    <line x1="120" y1="116" x2="120" y2="116" />
+    <path d="M120 116 q0 -2 0 0" />
+    <line x1="118" y1="112" x2="122" y2="112"/>
+    <circle cx="100" cy="116" r="6" fill="#14110a" stroke-width="0"/>
+    <circle cx="140" cy="116" r="6" fill="#14110a" stroke-width="0"/>
+    <!-- smile -->
+    <path d="M104 148 q16 14 32 0" fill="none" stroke="#14110a" stroke-width="5" stroke-linecap="round"/>
+    <!-- bindi -->
+    <circle cx="120" cy="92" r="4" fill="#e8392b" stroke-width="0"/>
+    <!-- coat collar -->
+    <path d="M80 178 q40 26 80 0 l10 28 q-50 24 -100 0 z" fill="#fd79a8"/>
+    <!-- gadget pocket -->
+    <rect x="132" y="196" width="22" height="20" rx="4" fill="#fff" />
+  </g>
+</svg>

@@ -1,0 +1,27 @@
+<svg viewBox="0 0 240 240" xmlns="http://www.w3.org/2000/svg">
+  <g stroke="#14110a" stroke-width="6" stroke-linejoin="round">
+    <!-- ears -->
+    <path d="M70 84 L58 36 L104 66 Z" fill="#e8722e"/>
+    <path d="M170 84 L182 36 L136 66 Z" fill="#e8722e"/>
+    <path d="M74 74 L66 48 L96 66 Z" fill="#ffd9c2" stroke-width="0"/>
+    <path d="M166 74 L174 48 L144 66 Z" fill="#ffd9c2" stroke-width="0"/>
+    <!-- head -->
+    <path d="M120 60 C170 60 188 100 184 134 C180 176 150 196 120 196 C90 196 60 176 56 134 C52 100 70 60 120 60 Z" fill="#f0822f"/>
+    <!-- cheek fluff -->
+    <path d="M64 150 q-18 6 -22 -10 q20 2 22 -2 Z" fill="#f0822f"/>
+    <path d="M176 150 q18 6 22 -10 q-20 2 -22 -2 Z" fill="#f0822f"/>
+    <!-- muzzle -->
+    <path d="M120 120 C150 120 160 150 150 168 C140 184 120 188 120 188 C120 188 100 184 90 168 C80 150 90 120 120 120 Z" fill="#fff6ef"/>
+    <!-- eyes -->
+    <circle cx="98" cy="116" r="11" fill="#14110a" stroke-width="0"/>
+    <circle cx="142" cy="116" r="11" fill="#14110a" stroke-width="0"/>
+    <circle cx="101" cy="113" r="4" fill="#fff" stroke-width="0"/>
+    <circle cx="145" cy="113" r="4" fill="#fff" stroke-width="0"/>
+    <!-- nose + mouth -->
+    <path d="M110 150 q10 8 20 0 q-10 8 -10 14 q0 -6 -10 -14 Z" fill="#14110a" stroke-width="0"/>
+    <path d="M120 168 q-12 10 -22 2 M120 168 q12 10 22 2" fill="none" stroke-width="5" stroke-linecap="round"/>
+    <!-- scarf -->
+    <path d="M84 188 q36 22 72 0 l6 22 q-42 22 -84 0 z" fill="#3aa0d8"/>
+    <rect x="150" y="196" width="16" height="34" rx="6" fill="#3aa0d8"/>
+  </g>
+</svg>

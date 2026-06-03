@@ -145,15 +145,16 @@ window.Onboarding = (function () {
   function screenAvatar() {
     step = 5;
     const cast = (D().crewAvatars || D().avatars.map((e) => ({ emoji: e, name: "" })));
-    if (!draft.avatar.name) { draft.avatar.emoji = cast[0].emoji; draft.avatar.name = cast[0].name; }
+    if (!draft.avatar.name) { Object.assign(draft.avatar, cast[0]); }
+    const ava = (c) => c.img ? `<img class="ava-img" src="${c.img}" alt="">` : `<span class="ava-emoji">${c.emoji}</span>`;
     UI.render(`
       ${UI.progressDots(step, TOTAL)}
       <h1 class="title center">Pick your character 🦸</h1>
       <p class="subtitle center">This is who you'll be in the Curio-Verse!</p>
-      <div class="mascot" id="preview">${draft.avatar.emoji}</div>
+      <div class="mascot" id="preview">${ava(draft.avatar)}</div>
       <div class="choices grid-3" id="av" style="margin-top:6px">
-        ${cast.map((c) => `<button class="choice ${draft.avatar.emoji === c.emoji ? "selected" : ""}" data-e="${c.emoji}" data-n="${UI.esc(c.name)}">
-          <span class="emoji">${c.emoji}</span><span style="font-size:12px">${UI.esc(c.name)}</span></button>`).join("")}
+        ${cast.map((c) => `<button class="choice ${draft.avatar.name === c.name ? "selected" : ""}" data-i="${cast.indexOf(c)}">
+          ${ava(c)}<span style="font-size:12px;margin-top:4px">${UI.esc(c.name)}</span></button>`).join("")}
       </div>
       ${backNext("screenInterestsBack", "next")}
     `);
@@ -161,9 +162,9 @@ window.Onboarding = (function () {
       b.onclick = () => {
         document.querySelectorAll("#av .choice").forEach((x) => x.classList.remove("selected"));
         b.classList.add("selected");
-        draft.avatar.emoji = b.dataset.e; draft.avatar.name = b.dataset.n;
+        Object.assign(draft.avatar, cast[+b.dataset.i]);
         const p = document.getElementById("preview");
-        p.textContent = b.dataset.e;
+        p.innerHTML = ava(draft.avatar);
         p.classList.remove("wave"); void p.offsetWidth; p.classList.add("wave");
       };
     });

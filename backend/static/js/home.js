@@ -27,6 +27,8 @@ window.Home = (function () {
     }
   }
 
+  // render an avatar as its illustration (if set) or emoji fallback
+  const avaInner = (av) => (av && av.img) ? `<img class="ava-img" src="${av.img}" alt="">` : `<span class="ava-emoji">${(av && av.emoji) || "🦊"}</span>`;
   const worldById = (id) => worlds.find((x) => x.id === id);
   const hpWorld = (id) => (hp.worlds || []).find((x) => x.id === id);
 
@@ -39,7 +41,7 @@ window.Home = (function () {
     UI.render(`
       <!-- 2.1 Top bar -->
       <div class="topbar fadein">
-        <button class="avatar-btn" id="toProfile"><span>${me.avatar.emoji || "🦊"}</span></button>
+        <button class="avatar-btn" id="toProfile">${avaInner(me.avatar)}</button>
         <div class="greet"><b>${g.text} ${g.emoji}</b><span>${hp.level.tier.emoji} ${hp.level.tier.name} · ${hp.stats.xp} XP</span></div>
         <span class="coinchip">🪙 ${hp.coins}</span>
         <button class="icon-btn" id="bell">🔔${unread ? `<i class="dot">${unread}</i>` : ""}</button>
@@ -92,7 +94,7 @@ window.Home = (function () {
         <div class="section-h"><h3>✨ Meet your crew</h3><a id="seecrew">See all</a></div>
         <div class="rail">${crew.map((c) => `
           <button class="crewchip" data-crew="${c.id}">
-            <span class="crew-ava" style="background:linear-gradient(145deg, ${c.color}, rgba(8,6,22,.3))">${c.emoji}</span>
+            <span class="crew-ava" style="background:linear-gradient(145deg, ${c.color}, rgba(8,6,22,.25))">${c.image ? `<img class="ava-img" src="${c.image}" alt="">` : c.emoji}</span>
             <b>${UI.esc(c.name.split(" ")[0])}</b>
           </button>`).join("")}</div>
       </div>` : ""}
@@ -291,7 +293,7 @@ window.Home = (function () {
       <div class="crew-grid fadein delay-1">
         ${crew.map((c) => `
           <button class="crew-card" data-crew="${c.id}" style="border-color:${c.color}66">
-            <span class="crew-ava lg" style="background:linear-gradient(145deg, ${c.color}, rgba(8,6,22,.3))">${c.emoji}</span>
+            <span class="crew-ava lg" style="background:linear-gradient(145deg, ${c.color}, rgba(8,6,22,.25))">${c.image ? `<img class="ava-img" src="${c.image}" alt="">` : c.emoji}</span>
             <b>${UI.esc(c.name)}</b><small>${UI.esc(c.role)}</small>
           </button>`).join("")}
       </div>
@@ -308,7 +310,7 @@ window.Home = (function () {
       <div class="sheet"><div class="scrim"></div><div class="panel">
         <div class="phead"><b>${c.emoji} ${UI.esc(c.name)}</b><button class="close">✕</button></div>
         <div style="padding:18px;text-align:center">
-          <div class="mascot" style="background:linear-gradient(145deg, ${c.color}, rgba(8,6,22,.3))">${c.emoji}</div>
+          <div class="mascot" style="background:linear-gradient(145deg, ${c.color}, rgba(8,6,22,.25))">${c.image ? `<img class="ava-img" src="${c.image}" alt="">` : c.emoji}</div>
           <p class="muted" style="margin:2px 0 6px;font-weight:800">${UI.esc(c.role)}${c.villain ? " 🌫️" : ""}</p>
           <div class="bubble center" style="margin:0 auto 12px">“${UI.esc(c.tagline)}”</div>
           <p style="font-size:14px;line-height:1.5;text-align:left">${UI.esc(c.bio)}</p>
@@ -338,11 +340,12 @@ window.Home = (function () {
           <span class="bln-who" style="color:${c}">${p.speaker_emoji} ${UI.esc(p.speaker_name)}</span>
           ${UI.esc(p.text)}
         </div>` : "";
-      // figure: real illustration if a panel has `art` (drop-in for artists), else emoji placeholder
+      // figure: a panel's own art > the speaking character's illustration > emoji scene
       const figure = p.art
         ? `<img class="cart-img" src="${p.art}" alt="">`
-        : (p.speaker ? `<span class="fig">${p.speaker_emoji}</span><span class="set">${p.scene}</span>`
-                     : `<span class="fig">${p.scene}</span>`);
+        : p.speaker_image
+          ? `<img class="cfig-img" src="${p.speaker_image}" alt=""><span class="set">${p.scene}</span>`
+          : `<span class="fig">${p.scene}</span>`;
       return `<div class="cpanel" style="--c:${c}">
         <div class="cart">${figure}</div>${caption}${balloon}
         <span class="pnum">${k + 1}</span>
@@ -691,7 +694,7 @@ window.Home = (function () {
     UI.render(`
       <div class="home-head fadein"><div class="who"><h2>👤 Profile</h2><p>Your hero & settings</p></div></div>
       <div class="profile-hero fadein delay-1">
-        <div class="mascot">${me.avatar.emoji || "🦊"}</div>
+        <div class="mascot">${avaInner(me.avatar)}</div>
         <h2 style="margin:6px 0 2px">${UI.esc(me.name)}</h2>
         ${me.avatar.name ? `<p class="muted" style="margin:0 0 2px;font-weight:800">playing as ${UI.esc(me.avatar.name)}</p>` : ""}
         <div class="row" style="justify-content:center;gap:6px;margin:4px 0">
@@ -800,20 +803,20 @@ window.Home = (function () {
         <div class="panel">
           <div class="phead"><b>🎭 Pick your character</b><button class="close">✕</button></div>
           <div class="choices grid-3" style="padding:16px">
-            ${cast.map((c) => `<button class="choice ${me.avatar.emoji === c.emoji ? "selected" : ""}" data-e="${c.emoji}" data-n="${UI.esc(c.name)}">
-              <span class="emoji">${c.emoji}</span><span style="font-size:12px">${UI.esc(c.name)}</span></button>`).join("")}
+            ${cast.map((c, i) => `<button class="choice ${me.avatar.name === c.name ? "selected" : ""}" data-i="${i}">
+              ${c.img ? `<img class="ava-img" src="${c.img}" alt="">` : `<span class="ava-emoji">${c.emoji}</span>`}<span style="font-size:12px;margin-top:4px">${UI.esc(c.name)}</span></button>`).join("")}
           </div>
         </div></div>`);
     document.querySelector(".stage").appendChild(sheet);
     const close = () => sheet.remove();
     sheet.querySelector(".scrim").onclick = close;
     sheet.querySelector(".close").onclick = close;
-    sheet.querySelectorAll("[data-e]").forEach((b) => b.onclick = async () => {
-      const e = b.dataset.e, n = b.dataset.n;
+    sheet.querySelectorAll("[data-i]").forEach((b) => b.onclick = async () => {
+      const c = cast[+b.dataset.i];
       try {
-        await API.updatePrefs(App.userId(), { avatar: { ...me.avatar, emoji: e, name: n } });
-        me.avatar.emoji = e; me.avatar.name = n;
-        close(); UI.toast(n ? `You're ${n}! 🦸` : "Hero updated! 🦸"); renderProfile();
+        await API.updatePrefs(App.userId(), { avatar: { ...me.avatar, emoji: c.emoji, name: c.name, img: c.img } });
+        me.avatar.emoji = c.emoji; me.avatar.name = c.name; me.avatar.img = c.img;
+        close(); UI.toast(c.name ? `You're ${c.name}! 🦸` : "Hero updated! 🦸"); renderProfile();
       } catch (_) { UI.toast("Couldn't save"); }
     });
   }

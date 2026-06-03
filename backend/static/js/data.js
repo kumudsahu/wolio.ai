@@ -35,11 +35,13 @@ window.DATA = {
   avatars: ["🦊", "🐯", "🐼", "🚀", "🦄", "🤖", "🐸", "🦁", "🐙", "🦖", "👾", "🐲"],
   // Curio-Verse cast — kids pick a character as their avatar (ties users to the IP)
   crewAvatars: [
-    { emoji: "🤖", name: "Wolio" }, { emoji: "🚀", name: "Astra" },
-    { emoji: "🦉", name: "Digit" }, { emoji: "🦊", name: "Pip" },
-    { emoji: "⏳", name: "Chip" }, { emoji: "👵", name: "Nani" },
-    { emoji: "🦄", name: "Sparkle" }, { emoji: "🐲", name: "Drake" },
-    { emoji: "🦖", name: "Rexy" },
+    { emoji: "🤖", name: "Wolio", img: "/static/img/wolio.svg" },
+    { emoji: "🚀", name: "Astra", img: "/static/img/astra.svg" },
+    { emoji: "🦉", name: "Digit", img: "/static/img/digit.svg" },
+    { emoji: "🦊", name: "Pip",   img: "/static/img/pip.svg" },
+    { emoji: "⏳", name: "Chip",  img: "/static/img/chip.svg" },
+    { emoji: "👵", name: "Nani",  img: "/static/img/nani.svg" },
+    { emoji: "🌫️", name: "Muddle", img: "/static/img/muddle.svg" },
   ],
   behavior: [
     {

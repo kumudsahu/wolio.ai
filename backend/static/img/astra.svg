@@ -1,0 +1,21 @@
+<svg viewBox="0 0 240 240" xmlns="http://www.w3.org/2000/svg">
+  <g stroke="#14110a" stroke-width="6" stroke-linejoin="round">
+    <!-- suit shoulders -->
+    <path d="M58 196 q62 -34 124 0 l0 40 l-124 0 z" fill="#f0822f"/>
+    <rect x="104" y="180" width="32" height="22" rx="6" fill="#ffd9c2"/>
+    <!-- helmet -->
+    <circle cx="120" cy="112" r="74" fill="#eef3ff"/>
+    <circle cx="120" cy="112" r="74" fill="none"/>
+    <!-- visor -->
+    <path d="M70 100 q50 -40 100 0 l0 36 q-50 30 -100 0 z" fill="#1b2a4a"/>
+    <!-- face behind visor -->
+    <circle cx="120" cy="118" r="34" fill="#ffcfa8" stroke-width="0"/>
+    <circle cx="108" cy="116" r="5" fill="#14110a" stroke-width="0"/>
+    <circle cx="134" cy="116" r="5" fill="#14110a" stroke-width="0"/>
+    <path d="M108 132 q12 10 24 0" fill="none" stroke="#14110a" stroke-width="5" stroke-linecap="round"/>
+    <!-- visor shine -->
+    <path d="M84 96 q14 -14 30 -16" fill="none" stroke="#9fd8ff" stroke-width="6" stroke-linecap="round"/>
+    <!-- star badge -->
+    <path d="M120 196 l5 12 l13 1 l-10 9 l3 13 l-11 -7 l-11 7 l3 -13 l-10 -9 l13 -1 z" fill="#ffd23b" stroke-width="3"/>
+  </g>
+</svg>

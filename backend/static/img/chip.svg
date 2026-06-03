@@ -1,0 +1,24 @@
+<svg viewBox="0 0 240 240" xmlns="http://www.w3.org/2000/svg">
+  <defs><radialGradient id="cg" cx="0.5" cy="0.4" r="0.7">
+    <stop offset="0" stop-color="#8fd6ff"/><stop offset="1" stop-color="#2f8fe0"/></radialGradient></defs>
+  <g stroke="#14110a" stroke-width="6" stroke-linejoin="round">
+    <!-- glow -->
+    <circle cx="120" cy="118" r="86" fill="#bfe6ff" stroke-width="0" opacity="0.5"/>
+    <!-- hourglass frame -->
+    <rect x="64" y="44" width="112" height="16" rx="6" fill="#caa86a"/>
+    <rect x="64" y="180" width="112" height="16" rx="6" fill="#caa86a"/>
+    <!-- glass -->
+    <path d="M78 60 q42 56 0 0 L162 60 C162 96 128 108 120 120 C112 108 78 96 78 60 Z" fill="url(#cg)"/>
+    <path d="M78 180 C78 144 112 132 120 120 C128 132 162 144 162 180 Z" fill="url(#cg)"/>
+    <!-- sand -->
+    <path d="M104 168 q16 -22 32 0 z" fill="#ffd23b" stroke-width="0"/>
+    <line x1="120" y1="120" x2="120" y2="168" stroke="#ffd23b" stroke-width="4"/>
+    <!-- face -->
+    <circle cx="106" cy="92" r="6" fill="#14110a" stroke-width="0"/>
+    <circle cx="134" cy="92" r="6" fill="#14110a" stroke-width="0"/>
+    <path d="M108 104 q12 10 24 0" fill="none" stroke="#14110a" stroke-width="5" stroke-linecap="round"/>
+    <!-- feet -->
+    <ellipse cx="98" cy="208" rx="16" ry="9" fill="#2f8fe0"/>
+    <ellipse cx="142" cy="208" rx="16" ry="9" fill="#2f8fe0"/>
+  </g>
+</svg>
