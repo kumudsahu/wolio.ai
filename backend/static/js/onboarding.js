@@ -141,16 +141,19 @@ window.Onboarding = (function () {
     });
   }
 
-  /* ---------- 1.6 Avatar ---------- */
+  /* ---------- 1.6 Avatar — pick a Curio-Verse character ---------- */
   function screenAvatar() {
     step = 5;
+    const cast = (D().crewAvatars || D().avatars.map((e) => ({ emoji: e, name: "" })));
+    if (!draft.avatar.name) { draft.avatar.emoji = cast[0].emoji; draft.avatar.name = cast[0].name; }
     UI.render(`
       ${UI.progressDots(step, TOTAL)}
-      <h1 class="title center">Build your hero 🦸</h1>
-      <p class="subtitle center">Unlock more looks as you learn!</p>
+      <h1 class="title center">Pick your character 🦸</h1>
+      <p class="subtitle center">This is who you'll be in the Curio-Verse!</p>
       <div class="mascot" id="preview">${draft.avatar.emoji}</div>
       <div class="choices grid-3" id="av" style="margin-top:6px">
-        ${D().avatars.map((e) => `<button class="choice ${draft.avatar.emoji === e ? "selected" : ""}" data-e="${e}" style="font-size:30px;padding:14px">${e}</button>`).join("")}
+        ${cast.map((c) => `<button class="choice ${draft.avatar.emoji === c.emoji ? "selected" : ""}" data-e="${c.emoji}" data-n="${UI.esc(c.name)}">
+          <span class="emoji">${c.emoji}</span><span style="font-size:12px">${UI.esc(c.name)}</span></button>`).join("")}
       </div>
       ${backNext("screenInterestsBack", "next")}
     `);
@@ -158,7 +161,7 @@ window.Onboarding = (function () {
       b.onclick = () => {
         document.querySelectorAll("#av .choice").forEach((x) => x.classList.remove("selected"));
         b.classList.add("selected");
-        draft.avatar.emoji = b.dataset.e;
+        draft.avatar.emoji = b.dataset.e; draft.avatar.name = b.dataset.n;
         const p = document.getElementById("preview");
         p.textContent = b.dataset.e;
         p.classList.remove("wave"); void p.offsetWidth; p.classList.add("wave");

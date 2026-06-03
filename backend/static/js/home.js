@@ -338,9 +338,11 @@ window.Home = (function () {
           <span class="bln-who" style="color:${c}">${p.speaker_emoji} ${UI.esc(p.speaker_name)}</span>
           ${UI.esc(p.text)}
         </div>` : "";
-      // figure: show the speaker character big if there is one, else the scene
-      const figure = p.speaker ? `<span class="fig">${p.speaker_emoji}</span><span class="set">${p.scene}</span>`
-                               : `<span class="fig">${p.scene}</span>`;
+      // figure: real illustration if a panel has `art` (drop-in for artists), else emoji placeholder
+      const figure = p.art
+        ? `<img class="cart-img" src="${p.art}" alt="">`
+        : (p.speaker ? `<span class="fig">${p.speaker_emoji}</span><span class="set">${p.scene}</span>`
+                     : `<span class="fig">${p.scene}</span>`);
       return `<div class="cpanel" style="--c:${c}">
         <div class="cart">${figure}</div>${caption}${balloon}
         <span class="pnum">${k + 1}</span>
@@ -691,6 +693,7 @@ window.Home = (function () {
       <div class="profile-hero fadein delay-1">
         <div class="mascot">${me.avatar.emoji || "🦊"}</div>
         <h2 style="margin:6px 0 2px">${UI.esc(me.name)}</h2>
+        ${me.avatar.name ? `<p class="muted" style="margin:0 0 2px;font-weight:800">playing as ${UI.esc(me.avatar.name)}</p>` : ""}
         <div class="row" style="justify-content:center;gap:6px;margin:4px 0">
           <span class="tierbadge">${hp.level.tier.emoji} ${hp.level.tier.name}</span>
           <span class="coinchip">🪙 ${hp.coins}</span>
@@ -790,13 +793,15 @@ window.Home = (function () {
   }
 
   function openAvatarSheet() {
-    const list = (window.DATA && window.DATA.avatars) || ["🦊","🐯","🐼","🚀","🦄","🤖"];
+    const cast = (window.DATA && window.DATA.crewAvatars) ||
+      (window.DATA && window.DATA.avatars.map((e) => ({ emoji: e, name: "" }))) || [{ emoji: "🦊", name: "" }];
     const sheet = UI.h(`
       <div class="sheet"><div class="scrim"></div>
         <div class="panel">
-          <div class="phead"><b>🎭 Choose your hero</b><button class="close">✕</button></div>
+          <div class="phead"><b>🎭 Pick your character</b><button class="close">✕</button></div>
           <div class="choices grid-3" style="padding:16px">
-            ${list.map((e) => `<button class="choice ${me.avatar.emoji === e ? "selected" : ""}" data-e="${e}" style="font-size:30px;padding:14px">${e}</button>`).join("")}
+            ${cast.map((c) => `<button class="choice ${me.avatar.emoji === c.emoji ? "selected" : ""}" data-e="${c.emoji}" data-n="${UI.esc(c.name)}">
+              <span class="emoji">${c.emoji}</span><span style="font-size:12px">${UI.esc(c.name)}</span></button>`).join("")}
           </div>
         </div></div>`);
     document.querySelector(".stage").appendChild(sheet);
@@ -804,11 +809,11 @@ window.Home = (function () {
     sheet.querySelector(".scrim").onclick = close;
     sheet.querySelector(".close").onclick = close;
     sheet.querySelectorAll("[data-e]").forEach((b) => b.onclick = async () => {
-      const e = b.dataset.e;
+      const e = b.dataset.e, n = b.dataset.n;
       try {
-        await API.updatePrefs(App.userId(), { avatar: { ...me.avatar, emoji: e } });
-        me.avatar.emoji = e;
-        close(); UI.toast("Hero updated! 🦸"); renderProfile();
+        await API.updatePrefs(App.userId(), { avatar: { ...me.avatar, emoji: e, name: n } });
+        me.avatar.emoji = e; me.avatar.name = n;
+        close(); UI.toast(n ? `You're ${n}! 🦸` : "Hero updated! 🦸"); renderProfile();
       } catch (_) { UI.toast("Couldn't save"); }
     });
   }

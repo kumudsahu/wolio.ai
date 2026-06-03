@@ -33,6 +33,14 @@ window.DATA = {
     { id: "energetic", label: "Energetic", emoji: "⚡" },
   ],
   avatars: ["🦊", "🐯", "🐼", "🚀", "🦄", "🤖", "🐸", "🦁", "🐙", "🦖", "👾", "🐲"],
+  // Curio-Verse cast — kids pick a character as their avatar (ties users to the IP)
+  crewAvatars: [
+    { emoji: "🤖", name: "Wolio" }, { emoji: "🚀", name: "Astra" },
+    { emoji: "🦉", name: "Digit" }, { emoji: "🦊", name: "Pip" },
+    { emoji: "⏳", name: "Chip" }, { emoji: "👵", name: "Nani" },
+    { emoji: "🦄", name: "Sparkle" }, { emoji: "🐲", name: "Drake" },
+    { emoji: "🦖", name: "Rexy" },
+  ],
   behavior: [
     {
       id: "visual", icon: "🎨", q: "Pick the one you like the most!",
