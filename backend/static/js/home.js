@@ -323,42 +323,42 @@ window.Home = (function () {
     sheet.querySelector(".close").onclick = close;
   }
 
-  /* ================= COMIC READER ================= */
-  async function openComic(id, panelIdx) {
+  /* ================= COMIC READER — a real comic page ================= */
+  async function openComic(id) {
+    UI.render(`<div class="builder"><div class="ring"></div><p class="build-step">Opening comic…</p></div>`);
     let data;
-    if (typeof panelIdx === "number" && openComic._cache && openComic._cache.id === id) {
-      data = openComic._cache;
-    } else {
-      UI.render(`<div class="builder"><div class="ring"></div><p class="build-step">Opening comic…</p></div>`);
-      try { data = await API.comic(id); } catch (e) { UI.toast("Couldn't open comic"); return renderHome(); }
-      openComic._cache = data; panelIdx = 0;
-    }
-    const i = panelIdx || 0;
-    const p = data.panels[i];
-    const last = i >= data.panels.length - 1;
+    try { data = await API.comic(id); } catch (e) { UI.toast("Couldn't open comic"); return renderHome(); }
+
+    const panel = (p, k) => {
+      // alternate panel art bias + a soft per-panel wash from the speaker colour
+      const c = p.speaker_color || "#8aa0ff";
+      const caption = !p.speaker ? `<div class="cap">${UI.esc(p.text)}</div>` : "";
+      const balloon = p.speaker ? `
+        <div class="bln">
+          <span class="bln-who" style="color:${c}">${p.speaker_emoji} ${UI.esc(p.speaker_name)}</span>
+          ${UI.esc(p.text)}
+        </div>` : "";
+      // figure: show the speaker character big if there is one, else the scene
+      const figure = p.speaker ? `<span class="fig">${p.speaker_emoji}</span><span class="set">${p.scene}</span>`
+                               : `<span class="fig">${p.scene}</span>`;
+      return `<div class="cpanel" style="--c:${c}">
+        <div class="cart">${figure}</div>${caption}${balloon}
+        <span class="pnum">${k + 1}</span>
+      </div>`;
+    };
+
     UI.render(`
-      <div class="mhead">
-        <button class="icon-btn" onclick="Home.renderHome()">✕</button>
-        <div class="mseg">${data.panels.map((_, k) => `<i class="${k < i ? "done" : k === i ? "active" : ""}"></i>`).join("")}</div>
-        <div class="mscene">${data.cover}</div>
+      <div class="home-head fadein"><button class="pill" onclick="Home.renderHome()">←</button>
+        <div class="who"><h2 style="font-size:16px">📖 Comic</h2></div></div>
+      <div class="comicpage fadein delay-1">
+        <div class="cbanner"><span class="cbanner-kicker">wolio.ai presents</span><h1>${UI.esc(data.title)}</h1></div>
+        ${data.panels.map(panel).join("")}
+        <div class="cmoral">📌 ${UI.esc(data.moral || "")}</div>
       </div>
-      <div class="comic-scene fadein" style="--c:${p.speaker_color || "var(--violet)"}">
-        <div class="comic-emoji">${p.scene}</div>
-      </div>
-      <div class="comic-bubble fadein ${p.speaker ? "" : "narration"}">
-        ${p.speaker_name ? `<div class="cb-who"><span style="color:${p.speaker_color}">${p.speaker_emoji} ${UI.esc(p.speaker_name)}</span></div>` : ""}
-        <p>${UI.esc(p.text)}</p>
-      </div>
-      <div class="cta-bar stack">
-        ${last ? `<div class="bubble center" style="margin-bottom:6px">📌 ${UI.esc(data.moral || "")}</div>` : ""}
-        <div class="row">
-          ${i > 0 ? `<button class="btn btn--ghost" style="flex:1" id="cprev">← Back</button>` : ""}
-          <button class="btn" style="flex:2" id="cnext">${last ? "Finish 🎉" : "Next →"}</button>
-        </div>
-      </div>
+      <div class="cta-bar"><button class="btn btn--block" onclick="Home.renderHome()">The End 🎉</button></div>
+      ${tabbar("home")}
     `);
-    document.getElementById("cnext").onclick = () => last ? renderHome() : openComic(id, i + 1);
-    const pv = document.getElementById("cprev"); if (pv) pv.onclick = () => openComic(id, i - 1);
+    wireTabs();
   }
 
   /* ================= WORLDS ================= */
